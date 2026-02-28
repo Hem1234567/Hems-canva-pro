@@ -3,6 +3,7 @@ import { CanvasElement, EditorState, ElementType, createDefaultElement } from '@
 
 interface EditorContextType extends EditorState {
   addElement: (type: ElementType) => void;
+  addImageElement: (src: string) => void;
   selectElement: (id: string | null) => void;
   updateElement: (id: string, updates: Partial<CanvasElement>) => void;
   deleteElement: (id: string) => void;
@@ -46,6 +47,15 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
 
   const addElement = useCallback((type: ElementType) => {
     const el = createDefaultElement(type, 50 + Math.random() * 100, 50 + Math.random() * 100);
+    const newElements = [...elements, el];
+    setElements(newElements);
+    setSelectedId(el.id);
+    pushHistory(newElements);
+  }, [elements, pushHistory]);
+
+  const addImageElement = useCallback((src: string) => {
+    const el = createDefaultElement('image', 50 + Math.random() * 100, 50 + Math.random() * 100);
+    el.src = src;
     const newElements = [...elements, el];
     setElements(newElements);
     setSelectedId(el.id);
@@ -112,7 +122,7 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     <EditorContext.Provider value={{
       elements, selectedId, zoom, canvasWidth, canvasHeight, unit, projectName,
       history, historyIndex, selectedElement,
-      addElement, selectElement, updateElement, deleteElement,
+      addElement, addImageElement, selectElement, updateElement, deleteElement,
       setZoom: setZoomState, setProjectName, setCanvasSize: (w, h) => { setCanvasWidth(w); setCanvasHeight(h); },
       undo, redo, duplicateElement, moveLayer, loadElements,
     }}>

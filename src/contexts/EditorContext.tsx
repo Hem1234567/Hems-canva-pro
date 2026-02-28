@@ -16,6 +16,11 @@ interface EditorContextType extends EditorState {
   selectedElement: CanvasElement | null;
   moveLayer: (id: string, direction: 'up' | 'down') => void;
   loadElements: (elements: CanvasElement[]) => void;
+  copyElement: () => void;
+  pasteElement: () => void;
+  snapEnabled: boolean;
+  setSnapEnabled: (v: boolean) => void;
+  reorderElements: (fromIndex: number, toIndex: number) => void;
 }
 
 const EditorContext = createContext<EditorContextType | null>(null);
@@ -36,6 +41,8 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
   const [projectName, setProjectName] = useState('Untitled Label');
   const [history, setHistory] = useState<CanvasElement[][]>([[]]);
   const [historyIndex, setHistoryIndex] = useState(0);
+  const [clipboard, setClipboard] = useState<CanvasElement | null>(null);
+  const [snapEnabled, setSnapEnabled] = useState(true);
 
   const pushHistory = useCallback((newElements: CanvasElement[]) => {
     setHistory(prev => {
@@ -102,6 +109,30 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     setSelectedId(null);
     pushHistory(newElements);
   }, [pushHistory]);
+
+  const copyElement = useCallback(() => {
+    const el = elements.find(e => e.id === selectedId);
+    if (el) setClipboard({ ...el });
+  }, [elements, selectedId]);
+
+  const pasteElement = useCallback(() => {
+    if (!clipboard) return;
+    const dup = { ...clipboard, id: `el-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, x: clipboard.x + 30, y: clipboard.y + 30 };
+    const newElements = [...elements, dup];
+    setElements(newElements);
+    setSelectedId(dup.id);
+    pushHistory(newElements);
+  }, [clipboard, elements, pushHistory]);
+
+  const reorderElements = useCallback((fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return;
+    const newArr = [...elements];
+    const [moved] = newArr.splice(fromIndex, 1);
+    newArr.splice(toIndex, 0, moved);
+    setElements(newArr);
+    pushHistory(newArr);
+  }, [elements, pushHistory]);
+
   const undo = useCallback(() => {
     if (historyIndex <= 0) return;
     const newIdx = historyIndex - 1;
@@ -121,10 +152,11 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
   return (
     <EditorContext.Provider value={{
       elements, selectedId, zoom, canvasWidth, canvasHeight, unit, projectName,
-      history, historyIndex, selectedElement,
+      history, historyIndex, selectedElement, snapEnabled,
       addElement, addImageElement, selectElement, updateElement, deleteElement,
       setZoom: setZoomState, setProjectName, setCanvasSize: (w, h) => { setCanvasWidth(w); setCanvasHeight(h); },
       undo, redo, duplicateElement, moveLayer, loadElements,
+      copyElement, pasteElement, setSnapEnabled, reorderElements,
     }}>
       {children}
     </EditorContext.Provider>

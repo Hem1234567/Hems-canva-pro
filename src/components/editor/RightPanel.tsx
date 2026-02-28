@@ -3,7 +3,7 @@ import { useEditor } from '@/contexts/EditorContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Trash2, Copy, ChevronUp, ChevronDown, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import { Trash2, Copy, ChevronUp, ChevronDown, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Eye, EyeOff, GripVertical } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -28,7 +28,7 @@ const loadGoogleFont = (fontFamily: string) => {
 };
 
 const RightPanel = () => {
-  const { selectedElement, updateElement, deleteElement, duplicateElement, moveLayer, canvasWidth, canvasHeight, setCanvasSize } = useEditor();
+  const { selectedElement, updateElement, deleteElement, duplicateElement, moveLayer, canvasWidth, canvasHeight, setCanvasSize, elements, selectElement, reorderElements } = useEditor();
 
   // Always call hooks before conditional returns
   useEffect(() => {
@@ -50,7 +50,7 @@ const RightPanel = () => {
           </div>
         </div>
         <Separator className="my-4" />
-        <p className="text-xs text-muted-foreground">Select an element on the canvas to edit its properties.</p>
+        <LayersList elements={elements} selectedId={null} onSelect={selectElement} onMove={moveLayer} onDelete={deleteElement} />
       </aside>
     );
   }
@@ -215,15 +215,8 @@ const RightPanel = () => {
           <span className="text-xs text-muted-foreground">{Math.round(el.opacity * 100)}%</span>
         </Section>
 
-        <Section title="Layer Order">
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" className="flex-1 gap-1" onClick={() => moveLayer(el.id, 'up')}>
-              <ChevronUp className="w-3 h-3" /> Forward
-            </Button>
-            <Button variant="outline" size="sm" className="flex-1 gap-1" onClick={() => moveLayer(el.id, 'down')}>
-              <ChevronDown className="w-3 h-3" /> Back
-            </Button>
-          </div>
+        <Section title="Layers">
+          <LayersList elements={elements} selectedId={el.id} onSelect={selectElement} onMove={moveLayer} onDelete={deleteElement} />
         </Section>
 
         {(el.type === 'text' || el.type === 'barcode' || el.type === 'qrcode') && (
@@ -258,6 +251,45 @@ const Field = ({ label, value, onChange }: { label: string; value: number; onCha
   <div>
     <Label className="text-[10px] text-muted-foreground">{label}</Label>
     <Input type="number" value={value} onChange={e => onChange(Number(e.target.value))} className="mt-0.5 h-8 text-xs" />
+  </div>
+);
+
+import { CanvasElement } from '@/types/editor';
+
+const LayersList = ({ elements, selectedId, onSelect, onMove, onDelete }: {
+  elements: CanvasElement[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+  onMove: (id: string, dir: 'up' | 'down') => void;
+  onDelete: (id: string) => void;
+}) => (
+  <div className="space-y-1">
+    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Layers</p>
+    {[...elements].reverse().map((el) => {
+      const label = el.type === 'text' ? (el.text?.slice(0, 16) || 'Text') : el.type;
+      const isActive = el.id === selectedId;
+      return (
+        <div
+          key={el.id}
+          onClick={() => onSelect(el.id)}
+          className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs cursor-pointer transition-colors ${
+            isActive ? 'bg-primary/10 text-primary border border-primary/30' : 'hover:bg-muted border border-transparent'
+          }`}
+        >
+          <span className="capitalize truncate flex-1">{label}</span>
+          <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0" onClick={e => { e.stopPropagation(); onMove(el.id, 'up'); }}>
+            <ChevronUp className="w-3 h-3" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0" onClick={e => { e.stopPropagation(); onMove(el.id, 'down'); }}>
+            <ChevronDown className="w-3 h-3" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0 text-destructive" onClick={e => { e.stopPropagation(); onDelete(el.id); }}>
+            <Trash2 className="w-3 h-3" />
+          </Button>
+        </div>
+      );
+    })}
+    {elements.length === 0 && <p className="text-xs text-muted-foreground">No elements yet</p>}
   </div>
 );
 

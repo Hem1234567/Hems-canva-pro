@@ -1,4 +1,4 @@
-import { Undo2, Redo2, ZoomIn, ZoomOut, Eye, ArrowLeft } from 'lucide-react';
+import { Undo2, Redo2, ZoomIn, ZoomOut, Eye, ArrowLeft, Magnet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEditor } from '@/contexts/EditorContext';
 import { useState } from 'react';
@@ -12,7 +12,7 @@ interface EditorNavbarProps {
 }
 
 const EditorNavbar = ({ stageRef }: EditorNavbarProps) => {
-  const { projectName, setProjectName, undo, redo, zoom, setZoom } = useEditor();
+  const { projectName, setProjectName, undo, redo, zoom, setZoom, snapEnabled, setSnapEnabled } = useEditor();
   const [editing, setEditing] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
 
@@ -53,6 +53,17 @@ const EditorNavbar = ({ stageRef }: EditorNavbarProps) => {
         </Button>
         <Button variant="ghost" size="icon" onClick={redo} title="Redo">
           <Redo2 className="w-4 h-4" />
+        </Button>
+      </div>
+
+      <div className="flex items-center border-l border-border pl-3">
+        <Button
+          variant={snapEnabled ? 'default' : 'ghost'}
+          size="icon"
+          onClick={() => setSnapEnabled(!snapEnabled)}
+          title={snapEnabled ? 'Disable snapping' : 'Enable snapping'}
+        >
+          <Magnet className="w-4 h-4" />
         </Button>
       </div>
 

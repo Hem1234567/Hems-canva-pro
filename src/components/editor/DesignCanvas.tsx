@@ -43,7 +43,7 @@ const findSnap = (pos: number, size: number, lines: number[], threshold: number)
 };
 
 const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
-  const { elements, selectedId, selectElement, updateElement, zoom, canvasWidth, canvasHeight, deleteElement, addImageElement } = useEditor();
+  const { elements, selectedId, selectElement, updateElement, zoom, canvasWidth, canvasHeight, deleteElement, addImageElement, snapEnabled } = useEditor();
   const transformerRef = useRef<Konva.Transformer>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const selectedRef = useRef<Konva.Node>(null);
@@ -95,6 +95,7 @@ const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
   const pixelH = canvasHeight * 3;
 
   const handleDragMove = useCallback((id: string, e: Konva.KonvaEventObject<DragEvent>) => {
+    if (!snapEnabled) return;
     const node = e.target;
     const el = elements.find(e => e.id === id);
     if (!el) return;
@@ -119,7 +120,7 @@ const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
       v: snapX ? snapX.line : null,
       h: snapY ? snapY.line : null,
     });
-  }, [elements, pixelW, pixelH]);
+  }, [elements, pixelW, pixelH, snapEnabled]);
 
   const handleDragEnd = (id: string, e: Konva.KonvaEventObject<DragEvent>) => {
     updateElement(id, { x: e.target.x(), y: e.target.y() });

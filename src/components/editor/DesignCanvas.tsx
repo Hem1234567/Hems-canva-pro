@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback, forwardRef, useImperativeHandle, useState } from 'react';
-import { Stage, Layer, Rect, Circle, Text, Line, Transformer } from 'react-konva';
+import { Stage, Layer, Rect, Circle, Text, Line, Transformer, Group } from 'react-konva';
 import { useEditor } from '@/contexts/EditorContext';
 import { CanvasElement } from '@/types/editor';
 import Konva from 'konva';
@@ -16,6 +16,7 @@ export interface DesignCanvasHandle {
 
 const SNAP_THRESHOLD = 6;
 const GRID_SNAP = 15;
+const RULER_SIZE = 24;
 
 const getSnapLines = (elements: CanvasElement[], dragId: string, canvasW: number, canvasH: number) => {
   const vLines: number[] = [0, canvasW / 2, canvasW];
@@ -43,14 +44,20 @@ const findSnap = (pos: number, size: number, lines: number[], threshold: number)
 };
 
 const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
-  const { elements, selectedId, selectElement, updateElement, zoom, canvasWidth, canvasHeight, deleteElement, addImageElement, snapEnabled } = useEditor();
+  const {
+    elements, selectedId, selectElement, updateElement, zoom, canvasWidth, canvasHeight,
+    deleteElement, addImageElement, snapEnabled, selectedIds, toggleSelectElement, deleteSelected
+  } = useEditor();
   const transformerRef = useRef<Konva.Transformer>(null);
   const stageRef = useRef<Konva.Stage>(null);
-  const selectedRef = useRef<Konva.Node>(null);
+  const selectedNodesRef = useRef<Map<string, Konva.Node>>(new Map());
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragOver, setDragOver] = useState(false);
   const [guides, setGuides] = useState<{ v: number | null; h: number | null }>({ v: null, h: null });
   const { user } = useAuth();
+
+  // Track drag start positions for group move
+  const groupDragStart = useRef<Map<string, { x: number; y: number }> | null>(null);
 
   useImperativeHandle(ref, () => ({
     getStage: () => stageRef.current,
@@ -58,36 +65,39 @@ const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
 
   useEffect(() => {
     if (!transformerRef.current) return;
-    if (selectedId && selectedRef.current) {
-      transformerRef.current.nodes([selectedRef.current]);
-      transformerRef.current.getLayer()?.batchDraw();
-    } else {
-      transformerRef.current.nodes([]);
-      transformerRef.current.getLayer()?.batchDraw();
-    }
-  }, [selectedId, elements]);
+    const nodes: Konva.Node[] = [];
+    selectedIds.forEach(id => {
+      const node = selectedNodesRef.current.get(id);
+      if (node) nodes.push(node);
+    });
+    transformerRef.current.nodes(nodes);
+    transformerRef.current.getLayer()?.batchDraw();
+  }, [selectedIds, elements]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Delete' || e.key === 'Backspace') {
-        if (selectedId && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) {
-          deleteElement(selectedId);
+        if (selectedIds.size > 0 && !(e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement)) {
+          deleteSelected();
         }
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [selectedId, deleteElement]);
+  }, [selectedIds, deleteSelected]);
 
-  const handleSelect = useCallback((id: string, nodeRef: Konva.Node) => {
-    selectedRef.current = nodeRef;
-    selectElement(id);
-  }, [selectElement]);
+  const handleSelect = useCallback((id: string, nodeRef: Konva.Node, shiftKey: boolean) => {
+    selectedNodesRef.current.set(id, nodeRef);
+    if (shiftKey) {
+      toggleSelectElement(id);
+    } else {
+      selectElement(id);
+    }
+  }, [selectElement, toggleSelectElement]);
 
   const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
     if (e.target === e.target.getStage()) {
       selectElement(null);
-      selectedRef.current = null;
     }
   };
 
@@ -102,11 +112,9 @@ const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
 
     const { vLines, hLines } = getSnapLines(elements, id, pixelW, pixelH);
 
-    // Grid snap
     let x = Math.round(node.x() / GRID_SNAP) * GRID_SNAP;
     let y = Math.round(node.y() / GRID_SNAP) * GRID_SNAP;
 
-    // Element/canvas edge snap (overrides grid if close)
     const snapX = findSnap(node.x(), el.width, vLines, SNAP_THRESHOLD);
     const snapY = findSnap(node.y(), el.height, hLines, SNAP_THRESHOLD);
 
@@ -116,16 +124,58 @@ const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
     node.x(x);
     node.y(y);
 
+    // Group move: move other selected elements by same delta
+    if (selectedIds.size > 1 && selectedIds.has(id) && groupDragStart.current) {
+      const startPos = groupDragStart.current.get(id);
+      if (startPos) {
+        const dx = x - startPos.x;
+        const dy = y - startPos.y;
+        selectedIds.forEach(sid => {
+          if (sid === id) return;
+          const sNode = selectedNodesRef.current.get(sid);
+          const sStart = groupDragStart.current?.get(sid);
+          if (sNode && sStart) {
+            sNode.x(sStart.x + dx);
+            sNode.y(sStart.y + dy);
+          }
+        });
+      }
+    }
+
     setGuides({
       v: snapX ? snapX.line : null,
       h: snapY ? snapY.line : null,
     });
-  }, [elements, pixelW, pixelH, snapEnabled]);
+  }, [elements, pixelW, pixelH, snapEnabled, selectedIds]);
 
-  const handleDragEnd = (id: string, e: Konva.KonvaEventObject<DragEvent>) => {
+  const handleDragStart = useCallback((id: string) => {
+    if (selectedIds.size > 1 && selectedIds.has(id)) {
+      const positions = new Map<string, { x: number; y: number }>();
+      selectedIds.forEach(sid => {
+        const el = elements.find(e => e.id === sid);
+        if (el) positions.set(sid, { x: el.x, y: el.y });
+      });
+      groupDragStart.current = positions;
+    } else {
+      groupDragStart.current = null;
+    }
+  }, [selectedIds, elements]);
+
+  const handleDragEnd = useCallback((id: string, e: Konva.KonvaEventObject<DragEvent>) => {
     updateElement(id, { x: e.target.x(), y: e.target.y() });
+    // Update all other selected elements too
+    if (selectedIds.size > 1 && selectedIds.has(id)) {
+      selectedIds.forEach(sid => {
+        if (sid === id) return;
+        const sNode = selectedNodesRef.current.get(sid);
+        if (sNode) {
+          updateElement(sid, { x: sNode.x(), y: sNode.y() });
+        }
+      });
+    }
+    groupDragStart.current = null;
     setGuides({ v: null, h: null });
-  };
+  }, [updateElement, selectedIds]);
 
   const handleTransformEnd = (id: string, e: Konva.KonvaEventObject<Event>) => {
     const node = e.target;
@@ -158,70 +208,122 @@ const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
     toast.success('Image added to canvas');
   }, [user, addImageElement]);
 
+  // Ruler tick generation
+  const rulerTicksH = [];
+  const rulerTicksV = [];
+  const tickSpacing = 30; // px per tick at zoom=1
+  for (let i = 0; i <= pixelW; i += tickSpacing) {
+    const mm = Math.round(i / 3);
+    rulerTicksH.push({ pos: i, label: mm % 10 === 0 ? `${mm}` : '', major: mm % 10 === 0 });
+  }
+  for (let i = 0; i <= pixelH; i += tickSpacing) {
+    const mm = Math.round(i / 3);
+    rulerTicksV.push({ pos: i, label: mm % 10 === 0 ? `${mm}` : '', major: mm % 10 === 0 });
+  }
+
   return (
     <div
       ref={containerRef}
-      className={`flex-1 bg-canvas overflow-auto flex items-center justify-center p-8 ${dragOver ? 'ring-2 ring-primary ring-inset' : ''}`}
+      className={`flex-1 bg-canvas overflow-auto flex flex-col ${dragOver ? 'ring-2 ring-primary ring-inset' : ''}`}
       onDragOver={e => { e.preventDefault(); setDragOver(true); }}
       onDragLeave={() => setDragOver(false)}
       onDrop={handleFileDrop}
     >
-      <div
-        style={{
-          transform: `scale(${zoom})`,
-          transformOrigin: 'center center',
-          transition: 'transform 0.15s ease',
-        }}
-      >
-        <div className="shadow-lg rounded-sm" style={{ width: pixelW, height: pixelH }}>
-          <Stage
-            ref={stageRef}
-            width={pixelW}
-            height={pixelH}
-            onClick={handleStageClick}
-            style={{ background: '#FFFFFF', borderRadius: '2px' }}
-          >
-            <Layer>
-              {Array.from({ length: Math.floor(pixelW / 30) }).map((_, i) => (
-                <Line key={`gv-${i}`} points={[i * 30, 0, i * 30, pixelH]} stroke="#f0f0f0" strokeWidth={0.5} />
-              ))}
-              {Array.from({ length: Math.floor(pixelH / 30) }).map((_, i) => (
-                <Line key={`gh-${i}`} points={[0, i * 30, pixelW, i * 30]} stroke="#f0f0f0" strokeWidth={0.5} />
-              ))}
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div
+          style={{
+            transform: `scale(${zoom})`,
+            transformOrigin: 'center center',
+            transition: 'transform 0.15s ease',
+          }}
+        >
+          <div className="relative">
+            {/* Top ruler */}
+            <div
+              className="absolute bg-muted border-b border-border"
+              style={{ left: RULER_SIZE, top: 0, width: pixelW, height: RULER_SIZE, overflow: 'hidden' }}
+            >
+              <svg width={pixelW} height={RULER_SIZE} className="block">
+                {rulerTicksH.map((t, i) => (
+                  <g key={i}>
+                    <line x1={t.pos} y1={t.major ? 0 : RULER_SIZE / 2} x2={t.pos} y2={RULER_SIZE} stroke="hsl(var(--muted-foreground))" strokeWidth={t.major ? 1 : 0.5} opacity={t.major ? 0.6 : 0.3} />
+                    {t.label && <text x={t.pos + 2} y={10} fontSize={8} fill="hsl(var(--muted-foreground))" opacity={0.7}>{t.label}</text>}
+                  </g>
+                ))}
+              </svg>
+            </div>
 
-              {elements.map(el => (
-                <CanvasElementRenderer
-                  key={el.id}
-                  element={el}
-                  isSelected={selectedId === el.id}
-                  onSelect={handleSelect}
-                  onDragMove={handleDragMove}
-                  onDragEnd={handleDragEnd}
-                  onTransformEnd={handleTransformEnd}
-                />
-              ))}
+            {/* Left ruler */}
+            <div
+              className="absolute bg-muted border-r border-border"
+              style={{ left: 0, top: RULER_SIZE, width: RULER_SIZE, height: pixelH, overflow: 'hidden' }}
+            >
+              <svg width={RULER_SIZE} height={pixelH} className="block">
+                {rulerTicksV.map((t, i) => (
+                  <g key={i}>
+                    <line y1={t.pos} x1={t.major ? 0 : RULER_SIZE / 2} y2={t.pos} x2={RULER_SIZE} stroke="hsl(var(--muted-foreground))" strokeWidth={t.major ? 1 : 0.5} opacity={t.major ? 0.6 : 0.3} />
+                    {t.label && <text x={2} y={t.pos - 2} fontSize={8} fill="hsl(var(--muted-foreground))" opacity={0.7}>{t.label}</text>}
+                  </g>
+                ))}
+              </svg>
+            </div>
 
-              {/* Alignment guide lines */}
-              {guides.v !== null && (
-                <Line points={[guides.v, 0, guides.v, pixelH]} stroke="#D4AF37" strokeWidth={1} dash={[4, 4]} listening={false} />
-              )}
-              {guides.h !== null && (
-                <Line points={[0, guides.h, pixelW, guides.h]} stroke="#D4AF37" strokeWidth={1} dash={[4, 4]} listening={false} />
-              )}
+            {/* Corner square */}
+            <div className="absolute bg-muted border-b border-r border-border" style={{ left: 0, top: 0, width: RULER_SIZE, height: RULER_SIZE }} />
 
-              <Transformer
-                ref={transformerRef}
-                boundBoxFunc={(oldBox, newBox) => {
-                  if (newBox.width < 5 || newBox.height < 5) return oldBox;
-                  return newBox;
-                }}
-                anchorFill="#D4AF37"
-                anchorStroke="#B8962E"
-                borderStroke="#D4AF37"
-                anchorSize={8}
-              />
-            </Layer>
-          </Stage>
+            {/* Canvas */}
+            <div className="shadow-lg rounded-sm" style={{ marginLeft: RULER_SIZE, marginTop: RULER_SIZE, width: pixelW, height: pixelH }}>
+              <Stage
+                ref={stageRef}
+                width={pixelW}
+                height={pixelH}
+                onClick={handleStageClick}
+                style={{ background: '#FFFFFF', borderRadius: '2px' }}
+              >
+                <Layer>
+                  {Array.from({ length: Math.floor(pixelW / 30) }).map((_, i) => (
+                    <Line key={`gv-${i}`} points={[i * 30, 0, i * 30, pixelH]} stroke="#f0f0f0" strokeWidth={0.5} />
+                  ))}
+                  {Array.from({ length: Math.floor(pixelH / 30) }).map((_, i) => (
+                    <Line key={`gh-${i}`} points={[0, i * 30, pixelW, i * 30]} stroke="#f0f0f0" strokeWidth={0.5} />
+                  ))}
+
+                  {elements.map(el => (
+                    <CanvasElementRenderer
+                      key={el.id}
+                      element={el}
+                      isSelected={selectedIds.has(el.id)}
+                      onSelect={handleSelect}
+                      onDragStart={handleDragStart}
+                      onDragMove={handleDragMove}
+                      onDragEnd={handleDragEnd}
+                      onTransformEnd={handleTransformEnd}
+                      registerNode={(id, node) => { if (node) selectedNodesRef.current.set(id, node); }}
+                    />
+                  ))}
+
+                  {guides.v !== null && (
+                    <Line points={[guides.v, 0, guides.v, pixelH]} stroke="#D4AF37" strokeWidth={1} dash={[4, 4]} listening={false} />
+                  )}
+                  {guides.h !== null && (
+                    <Line points={[0, guides.h, pixelW, guides.h]} stroke="#D4AF37" strokeWidth={1} dash={[4, 4]} listening={false} />
+                  )}
+
+                  <Transformer
+                    ref={transformerRef}
+                    boundBoxFunc={(oldBox, newBox) => {
+                      if (newBox.width < 5 || newBox.height < 5) return oldBox;
+                      return newBox;
+                    }}
+                    anchorFill="#D4AF37"
+                    anchorStroke="#B8962E"
+                    borderStroke="#D4AF37"
+                    anchorSize={8}
+                  />
+                </Layer>
+              </Stage>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -233,14 +335,20 @@ DesignCanvas.displayName = 'DesignCanvas';
 interface ElementRendererProps {
   element: CanvasElement;
   isSelected: boolean;
-  onSelect: (id: string, node: Konva.Node) => void;
+  onSelect: (id: string, node: Konva.Node, shiftKey: boolean) => void;
+  onDragStart: (id: string) => void;
   onDragMove: (id: string, e: Konva.KonvaEventObject<DragEvent>) => void;
   onDragEnd: (id: string, e: Konva.KonvaEventObject<DragEvent>) => void;
   onTransformEnd: (id: string, e: Konva.KonvaEventObject<Event>) => void;
+  registerNode: (id: string, node: Konva.Node | null) => void;
 }
 
-const CanvasElementRenderer = ({ element: el, isSelected, onSelect, onDragMove, onDragEnd, onTransformEnd }: ElementRendererProps) => {
+const CanvasElementRenderer = ({ element: el, isSelected, onSelect, onDragStart, onDragMove, onDragEnd, onTransformEnd, registerNode }: ElementRendererProps) => {
   const nodeRef = useRef<any>(null);
+
+  useEffect(() => {
+    registerNode(el.id, nodeRef.current);
+  }, [el.id, registerNode]);
 
   const isLocked = el.locked || false;
 
@@ -250,8 +358,9 @@ const CanvasElementRenderer = ({ element: el, isSelected, onSelect, onDragMove, 
     rotation: el.rotation,
     opacity: el.opacity,
     draggable: !isLocked,
-    onClick: () => nodeRef.current && onSelect(el.id, nodeRef.current),
-    onTap: () => nodeRef.current && onSelect(el.id, nodeRef.current),
+    onClick: (e: Konva.KonvaEventObject<MouseEvent>) => nodeRef.current && onSelect(el.id, nodeRef.current, e.evt.shiftKey),
+    onTap: () => nodeRef.current && onSelect(el.id, nodeRef.current, false),
+    onDragStart: isLocked ? undefined : () => onDragStart(el.id),
     onDragMove: isLocked ? undefined : (e: Konva.KonvaEventObject<DragEvent>) => onDragMove(el.id, e),
     onDragEnd: isLocked ? undefined : (e: Konva.KonvaEventObject<DragEvent>) => onDragEnd(el.id, e),
     onTransformEnd: isLocked ? undefined : (e: Konva.KonvaEventObject<Event>) => onTransformEnd(el.id, e),

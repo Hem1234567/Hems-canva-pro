@@ -3,6 +3,7 @@ import { Type, BarChart3, QrCode, Square, Circle, Minus, Image, Upload, Variable
 import { useEditor } from '@/contexts/EditorContext';
 import { ElementType } from '@/types/editor';
 import { cn } from '@/lib/utils';
+import { templates, instantiateTemplate } from '@/data/templates';
 
 const tabs = [
   { id: 'templates', label: 'Templates', icon: LayoutTemplate },
@@ -19,10 +20,15 @@ type TabId = typeof tabs[number]['id'];
 
 const LeftSidebar = () => {
   const [activeTab, setActiveTab] = useState<TabId>('text');
-  const { addElement } = useEditor();
+  const { addElement, loadElements } = useEditor();
 
   const handleAdd = (type: ElementType) => addElement(type);
-
+  const handleLoadTemplate = (templateId: string) => {
+    const template = templates.find(t => t.id === templateId);
+    if (template) {
+      loadElements(instantiateTemplate(template));
+    }
+  };
   return (
     <aside className="w-[280px] bg-surface border-r border-border flex shrink-0 h-full">
       {/* Tab icons */}
@@ -82,18 +88,19 @@ const LeftSidebar = () => {
 
         {activeTab === 'templates' && (
           <div className="space-y-3">
-            <div className="border border-border rounded-lg p-3 hover:border-primary cursor-pointer transition-colors">
-              <div className="w-full h-20 bg-muted rounded mb-2 flex items-center justify-center text-muted-foreground text-xs">
-                Product Label
-              </div>
-              <p className="text-xs font-medium">Basic Product Label</p>
-            </div>
-            <div className="border border-border rounded-lg p-3 hover:border-primary cursor-pointer transition-colors">
-              <div className="w-full h-20 bg-muted rounded mb-2 flex items-center justify-center text-muted-foreground text-xs">
-                Serial Sticker
-              </div>
-              <p className="text-xs font-medium">Serial Number Sticker</p>
-            </div>
+            {templates.map(t => (
+              <button
+                key={t.id}
+                onClick={() => handleLoadTemplate(t.id)}
+                className="w-full text-left border border-border rounded-lg p-3 hover:border-primary cursor-pointer transition-colors"
+              >
+                <div className="w-full h-20 bg-muted rounded mb-2 flex items-center justify-center text-muted-foreground text-xs">
+                  {t.name}
+                </div>
+                <p className="text-xs font-medium">{t.name}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{t.description}</p>
+              </button>
+            ))}
           </div>
         )}
 

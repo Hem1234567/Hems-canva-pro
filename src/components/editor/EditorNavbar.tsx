@@ -4,6 +4,7 @@ import { useEditor } from '@/contexts/EditorContext';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import ExportDialog from './ExportDialog';
+import PreviewDialog from './PreviewDialog';
 import Konva from 'konva';
 
 interface EditorNavbarProps {
@@ -13,6 +14,7 @@ interface EditorNavbarProps {
 const EditorNavbar = ({ stageRef }: EditorNavbarProps) => {
   const { projectName, setProjectName, undo, redo, zoom, setZoom } = useEditor();
   const [editing, setEditing] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   return (
     <header className="h-16 border-b border-border bg-card flex items-center px-4 gap-3 shrink-0">
@@ -65,12 +67,14 @@ const EditorNavbar = ({ stageRef }: EditorNavbarProps) => {
       </div>
 
       <div className="flex items-center gap-2 border-l border-border pl-3">
-        <Button variant="ghost" size="sm" className="gap-1.5">
+        <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => setPreviewOpen(true)}>
           <Eye className="w-4 h-4" />
           <span className="hidden sm:inline">Preview</span>
         </Button>
         <ExportDialog stageRef={stageRef} />
       </div>
+
+      <PreviewDialog open={previewOpen} onOpenChange={setPreviewOpen} />
     </header>
   );
 };

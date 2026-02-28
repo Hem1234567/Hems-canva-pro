@@ -1,13 +1,21 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { EditorProvider } from '@/contexts/EditorContext';
+import EditorNavbar from '@/components/editor/EditorNavbar';
+import LeftSidebar from '@/components/editor/LeftSidebar';
+import DesignCanvas from '@/components/editor/DesignCanvas';
+import RightPanel from '@/components/editor/RightPanel';
 
 const Index = () => {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <EditorProvider>
+      <div className="h-screen flex flex-col bg-background overflow-hidden">
+        <EditorNavbar />
+        <div className="flex flex-1 overflow-hidden">
+          <LeftSidebar />
+          <DesignCanvas />
+          <RightPanel />
+        </div>
       </div>
-    </div>
+    </EditorProvider>
   );
 };
 

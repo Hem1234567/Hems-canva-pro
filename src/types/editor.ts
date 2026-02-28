@@ -23,6 +23,7 @@ export interface CanvasElement {
   barcodeFormat?: string;
   src?: string;
   textDecoration?: string;
+  locked?: boolean;
 }
 
 export interface EditorState {

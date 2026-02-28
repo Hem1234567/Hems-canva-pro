@@ -242,17 +242,19 @@ interface ElementRendererProps {
 const CanvasElementRenderer = ({ element: el, isSelected, onSelect, onDragMove, onDragEnd, onTransformEnd }: ElementRendererProps) => {
   const nodeRef = useRef<any>(null);
 
+  const isLocked = el.locked || false;
+
   const commonProps = {
     x: el.x,
     y: el.y,
     rotation: el.rotation,
     opacity: el.opacity,
-    draggable: true,
+    draggable: !isLocked,
     onClick: () => nodeRef.current && onSelect(el.id, nodeRef.current),
     onTap: () => nodeRef.current && onSelect(el.id, nodeRef.current),
-    onDragMove: (e: Konva.KonvaEventObject<DragEvent>) => onDragMove(el.id, e),
-    onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => onDragEnd(el.id, e),
-    onTransformEnd: (e: Konva.KonvaEventObject<Event>) => onTransformEnd(el.id, e),
+    onDragMove: isLocked ? undefined : (e: Konva.KonvaEventObject<DragEvent>) => onDragMove(el.id, e),
+    onDragEnd: isLocked ? undefined : (e: Konva.KonvaEventObject<DragEvent>) => onDragEnd(el.id, e),
+    onTransformEnd: isLocked ? undefined : (e: Konva.KonvaEventObject<Event>) => onTransformEnd(el.id, e),
     ref: nodeRef,
   };
 

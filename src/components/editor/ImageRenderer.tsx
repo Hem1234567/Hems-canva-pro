@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { Image as KonvaImage } from 'react-konva';
+import { useState, useEffect } from 'react';
+import { Image as KonvaImage, Rect, Group } from 'react-konva';
 import { CanvasElement } from '@/types/editor';
 import Konva from 'konva';
 
@@ -20,18 +20,17 @@ const ImageRenderer = ({ element, commonProps }: ImageRendererProps) => {
     img.src = element.src;
   }, [element.src]);
 
-  if (!image) {
-    // Placeholder rect while loading
-    return null;
-  }
-
   return (
-    <KonvaImage
-      {...commonProps}
-      image={image}
-      width={element.width}
-      height={element.height}
-    />
+    <Group {...commonProps}>
+      <Rect width={element.width} height={element.height} fill={image ? 'transparent' : '#f0f0f0'} stroke="#ccc" strokeWidth={image ? 0 : 1} listening={true} />
+      {image && (
+        <KonvaImage
+          image={image}
+          width={element.width}
+          height={element.height}
+        />
+      )}
+    </Group>
   );
 };
 

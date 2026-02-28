@@ -21,6 +21,13 @@ interface EditorContextType extends EditorState {
   snapEnabled: boolean;
   setSnapEnabled: (v: boolean) => void;
   reorderElements: (fromIndex: number, toIndex: number) => void;
+  // Multi-select
+  selectedIds: Set<string>;
+  toggleSelectElement: (id: string) => void;
+  selectAll: () => void;
+  deleteSelected: () => void;
+  selectedElements: CanvasElement[];
+  updateSelectedElements: (updates: Partial<CanvasElement>) => void;
 }
 
 const EditorContext = createContext<EditorContextType | null>(null);
@@ -43,6 +50,7 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
   const [historyIndex, setHistoryIndex] = useState(0);
   const [clipboard, setClipboard] = useState<CanvasElement | null>(null);
   const [snapEnabled, setSnapEnabled] = useState(true);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const pushHistory = useCallback((newElements: CanvasElement[]) => {
     setHistory(prev => {
@@ -69,7 +77,47 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     pushHistory(newElements);
   }, [elements, pushHistory]);
 
-  const selectElement = useCallback((id: string | null) => setSelectedId(id), []);
+  const selectElement = useCallback((id: string | null) => {
+    setSelectedId(id);
+    setSelectedIds(id ? new Set([id]) : new Set());
+  }, []);
+
+  const toggleSelectElement = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      // Update selectedId to last toggled or first in set
+      if (next.size > 0) {
+        setSelectedId(next.has(id) ? id : [...next][next.size - 1]);
+      } else {
+        setSelectedId(null);
+      }
+      return next;
+    });
+  }, []);
+
+  const selectAll = useCallback(() => {
+    const allIds = new Set(elements.map(e => e.id));
+    setSelectedIds(allIds);
+    if (elements.length > 0) setSelectedId(elements[elements.length - 1].id);
+  }, [elements]);
+
+  const deleteSelected = useCallback(() => {
+    const newElements = elements.filter(el => !selectedIds.has(el.id));
+    setElements(newElements);
+    setSelectedId(null);
+    setSelectedIds(new Set());
+    pushHistory(newElements);
+  }, [elements, selectedIds, pushHistory]);
+
+  const updateSelectedElements = useCallback((updates: Partial<CanvasElement>) => {
+    const newElements = elements.map(el => selectedIds.has(el.id) ? { ...el, ...updates } : el);
+    setElements(newElements);
+  }, [elements, selectedIds]);
 
   const updateElement = useCallback((id: string, updates: Partial<CanvasElement>) => {
     const newElements = elements.map(el => el.id === id ? { ...el, ...updates } : el);
@@ -148,15 +196,17 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
   }, [history, historyIndex]);
 
   const selectedElement = elements.find(el => el.id === selectedId) || null;
+  const selectedElements = elements.filter(el => selectedIds.has(el.id));
 
   return (
     <EditorContext.Provider value={{
       elements, selectedId, zoom, canvasWidth, canvasHeight, unit, projectName,
-      history, historyIndex, selectedElement, snapEnabled,
+      history, historyIndex, selectedElement, snapEnabled, selectedIds, selectedElements,
       addElement, addImageElement, selectElement, updateElement, deleteElement,
       setZoom: setZoomState, setProjectName, setCanvasSize: (w, h) => { setCanvasWidth(w); setCanvasHeight(h); },
       undo, redo, duplicateElement, moveLayer, loadElements,
       copyElement, pasteElement, setSnapEnabled, reorderElements,
+      toggleSelectElement, selectAll, deleteSelected, updateSelectedElements,
     }}>
       {children}
     </EditorContext.Provider>

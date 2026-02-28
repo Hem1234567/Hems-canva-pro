@@ -16,7 +16,7 @@ const EditorInner = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const canvasRef = useRef<DesignCanvasHandle>(null);
-  const { loadElements, setProjectName, setCanvasSize, elements, projectName, canvasWidth, canvasHeight, undo, redo, duplicateElement, selectedId, copyElement, pasteElement } = useEditor();
+  const { loadElements, setProjectName, setCanvasSize, elements, projectName, canvasWidth, canvasHeight, undo, redo, duplicateElement, selectedId, copyElement, pasteElement, selectAll, deleteSelected, selectedIds } = useEditor();
   const [loaded, setLoaded] = useState(false);
   const saveTimeout = useRef<ReturnType<typeof setTimeout>>();
 
@@ -86,11 +86,14 @@ const EditorInner = () => {
       } else if (mod && e.key === 'v') {
         e.preventDefault();
         pasteElement();
+      } else if (mod && e.key === 'a') {
+        e.preventDefault();
+        selectAll();
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [saveProject, undo, redo, duplicateElement, selectedId, copyElement, pasteElement]);
+  }, [saveProject, undo, redo, duplicateElement, selectedId, copyElement, pasteElement, selectAll]);
 
   if (authLoading || !loaded) return <div className="min-h-screen bg-background flex items-center justify-center"><p className="text-muted-foreground">Loading editor...</p></div>;
 

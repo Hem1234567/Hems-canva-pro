@@ -14,6 +14,34 @@ export interface DesignCanvasHandle {
   getStage: () => Konva.Stage | null;
 }
 
+const SNAP_THRESHOLD = 6;
+const GRID_SNAP = 15;
+
+const getSnapLines = (elements: CanvasElement[], dragId: string, canvasW: number, canvasH: number) => {
+  const vLines: number[] = [0, canvasW / 2, canvasW];
+  const hLines: number[] = [0, canvasH / 2, canvasH];
+  for (const el of elements) {
+    if (el.id === dragId) continue;
+    vLines.push(el.x, el.x + el.width / 2, el.x + el.width);
+    hLines.push(el.y, el.y + el.height / 2, el.y + el.height);
+  }
+  return { vLines, hLines };
+};
+
+const findSnap = (pos: number, size: number, lines: number[], threshold: number) => {
+  const edges = [pos, pos + size / 2, pos + size];
+  let best: { offset: number; line: number } | null = null;
+  for (const edge of edges) {
+    for (const line of lines) {
+      const dist = Math.abs(edge - line);
+      if (dist < threshold && (!best || dist < Math.abs(best.offset))) {
+        best = { offset: line - edge, line };
+      }
+    }
+  }
+  return best;
+};
+
 const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
   const { elements, selectedId, selectElement, updateElement, zoom, canvasWidth, canvasHeight, deleteElement, addImageElement } = useEditor();
   const transformerRef = useRef<Konva.Transformer>(null);
@@ -21,6 +49,7 @@ const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
   const selectedRef = useRef<Konva.Node>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [guides, setGuides] = useState<{ v: number | null; h: number | null }>({ v: null, h: null });
   const { user } = useAuth();
 
   useImperativeHandle(ref, () => ({
@@ -62,8 +91,39 @@ const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
     }
   };
 
+  const pixelW = canvasWidth * 3;
+  const pixelH = canvasHeight * 3;
+
+  const handleDragMove = useCallback((id: string, e: Konva.KonvaEventObject<DragEvent>) => {
+    const node = e.target;
+    const el = elements.find(e => e.id === id);
+    if (!el) return;
+
+    const { vLines, hLines } = getSnapLines(elements, id, pixelW, pixelH);
+
+    // Grid snap
+    let x = Math.round(node.x() / GRID_SNAP) * GRID_SNAP;
+    let y = Math.round(node.y() / GRID_SNAP) * GRID_SNAP;
+
+    // Element/canvas edge snap (overrides grid if close)
+    const snapX = findSnap(node.x(), el.width, vLines, SNAP_THRESHOLD);
+    const snapY = findSnap(node.y(), el.height, hLines, SNAP_THRESHOLD);
+
+    if (snapX) x = node.x() + snapX.offset;
+    if (snapY) y = node.y() + snapY.offset;
+
+    node.x(x);
+    node.y(y);
+
+    setGuides({
+      v: snapX ? snapX.line : null,
+      h: snapY ? snapY.line : null,
+    });
+  }, [elements, pixelW, pixelH]);
+
   const handleDragEnd = (id: string, e: Konva.KonvaEventObject<DragEvent>) => {
     updateElement(id, { x: e.target.x(), y: e.target.y() });
+    setGuides({ v: null, h: null });
   };
 
   const handleTransformEnd = (id: string, e: Konva.KonvaEventObject<Event>) => {
@@ -81,7 +141,6 @@ const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
     });
   };
 
-  // Drag & drop image onto canvas
   const handleFileDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
@@ -97,9 +156,6 @@ const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
     addImageElement(publicUrl);
     toast.success('Image added to canvas');
   }, [user, addImageElement]);
-
-  const pixelW = canvasWidth * 3;
-  const pixelH = canvasHeight * 3;
 
   return (
     <div
@@ -138,10 +194,19 @@ const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
                   element={el}
                   isSelected={selectedId === el.id}
                   onSelect={handleSelect}
+                  onDragMove={handleDragMove}
                   onDragEnd={handleDragEnd}
                   onTransformEnd={handleTransformEnd}
                 />
               ))}
+
+              {/* Alignment guide lines */}
+              {guides.v !== null && (
+                <Line points={[guides.v, 0, guides.v, pixelH]} stroke="#D4AF37" strokeWidth={1} dash={[4, 4]} listening={false} />
+              )}
+              {guides.h !== null && (
+                <Line points={[0, guides.h, pixelW, guides.h]} stroke="#D4AF37" strokeWidth={1} dash={[4, 4]} listening={false} />
+              )}
 
               <Transformer
                 ref={transformerRef}
@@ -168,11 +233,12 @@ interface ElementRendererProps {
   element: CanvasElement;
   isSelected: boolean;
   onSelect: (id: string, node: Konva.Node) => void;
+  onDragMove: (id: string, e: Konva.KonvaEventObject<DragEvent>) => void;
   onDragEnd: (id: string, e: Konva.KonvaEventObject<DragEvent>) => void;
   onTransformEnd: (id: string, e: Konva.KonvaEventObject<Event>) => void;
 }
 
-const CanvasElementRenderer = ({ element: el, isSelected, onSelect, onDragEnd, onTransformEnd }: ElementRendererProps) => {
+const CanvasElementRenderer = ({ element: el, isSelected, onSelect, onDragMove, onDragEnd, onTransformEnd }: ElementRendererProps) => {
   const nodeRef = useRef<any>(null);
 
   const commonProps = {
@@ -183,6 +249,7 @@ const CanvasElementRenderer = ({ element: el, isSelected, onSelect, onDragEnd, o
     draggable: true,
     onClick: () => nodeRef.current && onSelect(el.id, nodeRef.current),
     onTap: () => nodeRef.current && onSelect(el.id, nodeRef.current),
+    onDragMove: (e: Konva.KonvaEventObject<DragEvent>) => onDragMove(el.id, e),
     onDragEnd: (e: Konva.KonvaEventObject<DragEvent>) => onDragEnd(el.id, e),
     onTransformEnd: (e: Konva.KonvaEventObject<Event>) => onTransformEnd(el.id, e),
     ref: nodeRef,

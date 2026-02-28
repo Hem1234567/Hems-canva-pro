@@ -7,6 +7,8 @@ import { Trash2, Copy, ChevronUp, ChevronDown, Bold, Italic, Underline, AlignLef
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CanvasElement } from '@/types/editor';
+import AlignmentTools from './AlignmentTools';
+import Minimap from './Minimap';
 
 const GOOGLE_FONTS = [
   'Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Oswald', 'Poppins',
@@ -50,6 +52,8 @@ const RightPanel = () => {
             <Input type="number" value={canvasHeight} onChange={e => setCanvasSize(canvasWidth, Number(e.target.value))} className="mt-1" />
           </div>
         </div>
+        <Separator className="my-4" />
+        <Minimap />
         <Separator className="my-4" />
         <LayersList elements={elements} selectedId={null} onSelect={selectElement} onMove={moveLayer} onDelete={deleteElement} />
       </aside>
@@ -119,7 +123,14 @@ const RightPanel = () => {
             <Field label="W" value={Math.round(el.width)} onChange={v => update({ width: v })} />
             <Field label="H" value={Math.round(el.height)} onChange={v => update({ height: v })} />
           </div>
+          {(el.type === 'rect' || el.type === 'image') && (
+            <div className="mt-2">
+              <Field label="Corner Radius" value={el.cornerRadius || 0} onChange={v => update({ cornerRadius: Math.max(0, v) })} />
+            </div>
+          )}
         </Section>
+
+        <AlignmentTools />
 
         <Section title="Rotation">
           <Field label="Angle" value={el.rotation} onChange={v => update({ rotation: v })} />

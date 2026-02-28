@@ -14,6 +14,7 @@ interface EditorContextType extends EditorState {
   duplicateElement: (id: string) => void;
   selectedElement: CanvasElement | null;
   moveLayer: (id: string, direction: 'up' | 'down') => void;
+  loadElements: (elements: CanvasElement[]) => void;
 }
 
 const EditorContext = createContext<EditorContextType | null>(null);
@@ -86,6 +87,11 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     pushHistory(newArr);
   }, [elements, pushHistory]);
 
+  const loadElements = useCallback((newElements: CanvasElement[]) => {
+    setElements(newElements);
+    setSelectedId(null);
+    pushHistory(newElements);
+  }, [pushHistory]);
   const undo = useCallback(() => {
     if (historyIndex <= 0) return;
     const newIdx = historyIndex - 1;
@@ -108,7 +114,7 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
       history, historyIndex, selectedElement,
       addElement, selectElement, updateElement, deleteElement,
       setZoom: setZoomState, setProjectName, setCanvasSize: (w, h) => { setCanvasWidth(w); setCanvasHeight(h); },
-      undo, redo, duplicateElement, moveLayer,
+      undo, redo, duplicateElement, moveLayer, loadElements,
     }}>
       {children}
     </EditorContext.Provider>

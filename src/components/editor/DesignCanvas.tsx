@@ -1,16 +1,25 @@
-import { useRef, useEffect, useCallback } from 'react';
-import { Stage, Layer, Rect, Circle, Text, Line, Transformer, Group } from 'react-konva';
+import { useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
+import { Stage, Layer, Rect, Circle, Text, Line, Transformer } from 'react-konva';
 import { useEditor } from '@/contexts/EditorContext';
 import { CanvasElement } from '@/types/editor';
 import Konva from 'konva';
+import BarcodeRenderer from './BarcodeRenderer';
+import QRCodeRenderer from './QRCodeRenderer';
 
-const DesignCanvas = () => {
+export interface DesignCanvasHandle {
+  getStage: () => Konva.Stage | null;
+}
+
+const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
   const { elements, selectedId, selectElement, updateElement, zoom, canvasWidth, canvasHeight, deleteElement } = useEditor();
   const transformerRef = useRef<Konva.Transformer>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const selectedRef = useRef<Konva.Node>(null);
 
-  // Attach transformer
+  useImperativeHandle(ref, () => ({
+    getStage: () => stageRef.current,
+  }));
+
   useEffect(() => {
     if (!transformerRef.current) return;
     if (selectedId && selectedRef.current) {
@@ -22,7 +31,6 @@ const DesignCanvas = () => {
     }
   }, [selectedId, elements]);
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -66,7 +74,7 @@ const DesignCanvas = () => {
     });
   };
 
-  const pixelW = canvasWidth * 3; // Scale for visibility
+  const pixelW = canvasWidth * 3;
   const pixelH = canvasHeight * 3;
 
   return (
@@ -87,7 +95,6 @@ const DesignCanvas = () => {
             style={{ background: '#FFFFFF', borderRadius: '2px' }}
           >
             <Layer>
-              {/* Grid */}
               {Array.from({ length: Math.floor(pixelW / 30) }).map((_, i) => (
                 <Line key={`gv-${i}`} points={[i * 30, 0, i * 30, pixelH]} stroke="#f0f0f0" strokeWidth={0.5} />
               ))}
@@ -95,7 +102,6 @@ const DesignCanvas = () => {
                 <Line key={`gh-${i}`} points={[0, i * 30, pixelW, i * 30]} stroke="#f0f0f0" strokeWidth={0.5} />
               ))}
 
-              {/* Elements */}
               {elements.map(el => (
                 <CanvasElementRenderer
                   key={el.id}
@@ -124,7 +130,9 @@ const DesignCanvas = () => {
       </div>
     </div>
   );
-};
+});
+
+DesignCanvas.displayName = 'DesignCanvas';
 
 interface ElementRendererProps {
   element: CanvasElement;
@@ -198,37 +206,9 @@ const CanvasElementRenderer = ({ element: el, isSelected, onSelect, onDragEnd, o
         />
       );
     case 'barcode':
-      return (
-        <Group {...commonProps}>
-          <Rect width={el.width} height={el.height} fill="#FFFFFF" stroke="#CCCCCC" strokeWidth={1} cornerRadius={2} />
-          {/* Barcode lines simulation */}
-          {Array.from({ length: Math.floor(el.width / 3) }).map((_, i) => (
-            <Line
-              key={i}
-              points={[i * 3 + 4, 4, i * 3 + 4, el.height - 14]}
-              stroke={el.fill}
-              strokeWidth={i % 3 === 0 ? 2 : 1}
-            />
-          ))}
-          <Text text={el.text || '{{serial}}'} fontSize={8} y={el.height - 12} x={4} fill={el.fill} fontFamily="monospace" />
-        </Group>
-      );
+      return <BarcodeRenderer element={el} commonProps={commonProps} />;
     case 'qrcode':
-      return (
-        <Group {...commonProps}>
-          <Rect width={el.width} height={el.height} fill="#FFFFFF" stroke="#CCCCCC" strokeWidth={1} cornerRadius={2} />
-          {/* QR pattern simulation */}
-          {Array.from({ length: 8 }).map((_, r) =>
-            Array.from({ length: 8 }).map((_, c) => {
-              const show = (r + c) % 2 === 0 || (r < 3 && c < 3) || (r < 3 && c > 4) || (r > 4 && c < 3);
-              if (!show) return null;
-              const cellW = (el.width - 8) / 8;
-              const cellH = (el.height - 8) / 8;
-              return <Rect key={`${r}-${c}`} x={4 + c * cellW} y={4 + r * cellH} width={cellW - 1} height={cellH - 1} fill={el.fill} />;
-            })
-          )}
-        </Group>
-      );
+      return <QRCodeRenderer element={el} commonProps={commonProps} />;
     default:
       return null;
   }

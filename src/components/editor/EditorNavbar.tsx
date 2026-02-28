@@ -1,15 +1,20 @@
-import { Undo2, Redo2, ZoomIn, ZoomOut, Eye, Download } from 'lucide-react';
+import { Undo2, Redo2, ZoomIn, ZoomOut, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEditor } from '@/contexts/EditorContext';
 import { useState } from 'react';
+import ExportDialog from './ExportDialog';
+import Konva from 'konva';
 
-const EditorNavbar = () => {
+interface EditorNavbarProps {
+  stageRef: React.RefObject<Konva.Stage>;
+}
+
+const EditorNavbar = ({ stageRef }: EditorNavbarProps) => {
   const { projectName, setProjectName, undo, redo, zoom, setZoom } = useEditor();
   const [editing, setEditing] = useState(false);
 
   return (
     <header className="h-16 border-b border-border bg-card flex items-center px-4 gap-3 shrink-0">
-      {/* Logo */}
       <div className="flex items-center gap-2 mr-4">
         <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
           <span className="text-primary-foreground font-bold text-sm">LF</span>
@@ -17,7 +22,6 @@ const EditorNavbar = () => {
         <span className="font-semibold text-foreground hidden sm:inline">LabelForge</span>
       </div>
 
-      {/* Project Name */}
       {editing ? (
         <input
           className="bg-secondary border border-border rounded px-2 py-1 text-sm font-medium text-foreground outline-none focus:ring-1 focus:ring-primary"
@@ -35,7 +39,6 @@ const EditorNavbar = () => {
 
       <div className="flex-1" />
 
-      {/* Undo/Redo */}
       <div className="flex items-center gap-1">
         <Button variant="ghost" size="icon" onClick={undo} title="Undo">
           <Undo2 className="w-4 h-4" />
@@ -45,7 +48,6 @@ const EditorNavbar = () => {
         </Button>
       </div>
 
-      {/* Zoom */}
       <div className="flex items-center gap-1 border-l border-border pl-3">
         <Button variant="ghost" size="icon" onClick={() => setZoom(Math.max(0.25, zoom - 0.1))}>
           <ZoomOut className="w-4 h-4" />
@@ -56,16 +58,12 @@ const EditorNavbar = () => {
         </Button>
       </div>
 
-      {/* Actions */}
       <div className="flex items-center gap-2 border-l border-border pl-3">
         <Button variant="ghost" size="sm" className="gap-1.5">
           <Eye className="w-4 h-4" />
           <span className="hidden sm:inline">Preview</span>
         </Button>
-        <Button size="sm" className="gap-1.5 bg-primary text-primary-foreground hover:bg-gold-hover gold-glow-hover">
-          <Download className="w-4 h-4" />
-          <span className="hidden sm:inline">Export PDF</span>
-        </Button>
+        <ExportDialog stageRef={stageRef} />
       </div>
     </header>
   );

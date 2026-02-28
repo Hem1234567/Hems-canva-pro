@@ -1,17 +1,19 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Download, Loader2, Upload } from 'lucide-react';
+import { Download, Loader2, Upload, Eye } from 'lucide-react';
 import { useEditor } from '@/contexts/EditorContext';
 import { jsPDF } from 'jspdf';
 import Konva from 'konva';
 import { CanvasElement } from '@/types/editor';
 import JsBarcode from 'jsbarcode';
 import QRCode from 'qrcode';
+import { Progress } from '@/components/ui/progress';
+import { toast } from 'sonner';
 
 interface ExportDialogProps {
   stageRef: React.RefObject<Konva.Stage>;
@@ -36,6 +38,8 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
   const [gapY, setGapY] = useState(5);
   const [exporting, setExporting] = useState(false);
   const [open, setOpen] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [progressLabel, setProgressLabel] = useState('');
 
   // Bulk serial state
   const [serialPrefix, setSerialPrefix] = useState('SN-');
@@ -43,7 +47,7 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
   const [serialEnd, setSerialEnd] = useState(10);
   const [serialPadding, setSerialPadding] = useState(4);
   const [csvSerials, setCsvSerials] = useState<string[]>([]);
-  const [exportMode, setExportMode] = useState<'single' | 'bulk'>('single');
+  const [exportMode, setExportMode] = useState<'single' | 'bulk'>('bulk');
 
   const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -54,6 +58,7 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
       const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
       const data = lines[0]?.match(/serial|number|code/i) ? lines.slice(1) : lines;
       setCsvSerials(data);
+      toast.success(`${data.length} serials loaded from CSV`);
     };
     reader.readAsText(file);
   };
@@ -61,28 +66,30 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
   const generateSerials = (): string[] => {
     if (csvSerials.length > 0) return csvSerials;
     const serials: string[] = [];
+    const seen = new Set<string>();
     for (let i = serialStart; i <= serialEnd; i++) {
-      serials.push(`${serialPrefix}${String(i).padStart(serialPadding, '0')}`);
+      const s = `${serialPrefix}${String(i).padStart(serialPadding, '0')}`;
+      if (!seen.has(s)) {
+        seen.add(s);
+        serials.push(s);
+      }
     }
     return serials;
   };
 
-  // Render elements to an offscreen canvas with serial replacement
   const renderLabelImage = async (serial: string): Promise<string> => {
-    // Create an offscreen Konva stage
     const pixelW = canvasWidth * 3;
     const pixelH = canvasHeight * 3;
     const container = document.createElement('div');
-    container.style.display = 'none';
+    container.style.position = 'absolute';
+    container.style.left = '-9999px';
     document.body.appendChild(container);
 
     const offStage = new Konva.Stage({ container, width: pixelW, height: pixelH });
     const layer = new Konva.Layer();
     offStage.add(layer);
 
-    // Render background
-    const bg = new Konva.Rect({ x: 0, y: 0, width: pixelW, height: pixelH, fill: '#FFFFFF' });
-    layer.add(bg);
+    layer.add(new Konva.Rect({ x: 0, y: 0, width: pixelW, height: pixelH, fill: '#FFFFFF' }));
 
     for (const el of elements) {
       const text = el.text?.replace(/\{\{serial\}\}/g, serial)
@@ -92,20 +99,20 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
 
       switch (el.type) {
         case 'text': {
-          const t = new Konva.Text({
+          layer.add(new Konva.Text({
             x: el.x, y: el.y, text, fontSize: el.fontSize || 18,
             fontFamily: el.fontFamily || 'Inter', fontStyle: el.fontStyle || 'normal',
             fill: el.fill, width: el.width, rotation: el.rotation, opacity: el.opacity,
-            letterSpacing: el.letterSpacing || 0,
-          });
-          layer.add(t);
+            letterSpacing: el.letterSpacing || 0, align: el.align || 'left',
+            textDecoration: el.textDecoration || '',
+          }));
           break;
         }
         case 'rect': {
           layer.add(new Konva.Rect({
             x: el.x, y: el.y, width: el.width, height: el.height,
             fill: el.fill, stroke: el.stroke, strokeWidth: el.strokeWidth,
-            rotation: el.rotation, opacity: el.opacity, cornerRadius: 2,
+            rotation: el.rotation, opacity: el.opacity, cornerRadius: el.cornerRadius || 0,
           }));
           break;
         }
@@ -186,6 +193,8 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
 
   const handleExport = async () => {
     setExporting(true);
+    setProgress(0);
+    setProgressLabel('Preparing...');
     try {
       const page = pageSize === 'Custom'
         ? { width: customW, height: customH }
@@ -202,8 +211,8 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
       });
 
       if (exportMode === 'single') {
-        // Single mode: use live stage snapshot
         if (!stageRef.current) { setExporting(false); return; }
+        setProgressLabel('Rendering label...');
         const dataUrl = stageRef.current.toDataURL({ pixelRatio: 3 });
         for (let i = 0; i < stickersPerPage; i++) {
           const col = i % cols;
@@ -212,12 +221,13 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
           const y = marginY + row * (stickerH + gapY);
           pdf.addImage(dataUrl, 'PNG', x, y, stickerW, stickerH);
         }
+        setProgress(100);
       } else {
-        // Bulk mode: one label per serial
         const serials = generateSerials();
+        const totalSerials = serials.length;
         let stickerIdx = 0;
 
-        for (let s = 0; s < serials.length; s++) {
+        for (let s = 0; s < totalSerials; s++) {
           if (stickerIdx > 0 && stickerIdx % stickersPerPage === 0) {
             pdf.addPage([page.width, page.height]);
           }
@@ -227,20 +237,32 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
           const x = marginX + col * (stickerW + gapX);
           const y = marginY + row * (stickerH + gapY);
 
+          setProgressLabel(`Generating ${serials[s]} (${s + 1}/${totalSerials})`);
           const labelImage = await renderLabelImage(serials[s]);
           pdf.addImage(labelImage, 'PNG', x, y, stickerW, stickerH);
           stickerIdx++;
+          setProgress(Math.round(((s + 1) / totalSerials) * 100));
         }
       }
 
+      setProgressLabel('Saving PDF...');
       pdf.save(`${projectName || 'labels'}.pdf`);
+      toast.success(`PDF exported with ${exportMode === 'bulk' ? generateSerials().length : stickersPerPage} labels`);
       setOpen(false);
     } catch (err) {
       console.error('PDF export failed:', err);
+      toast.error('PDF export failed. Check console for details.');
     } finally {
       setExporting(false);
+      setProgress(0);
+      setProgressLabel('');
     }
   };
+
+  const totalLabels = exportMode === 'bulk'
+    ? (csvSerials.length > 0 ? csvSerials.length : Math.max(0, serialEnd - serialStart + 1))
+    : cols * rows;
+  const totalPages = Math.ceil(totalLabels / (cols * rows));
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -262,6 +284,9 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
           </TabsList>
 
           <TabsContent value="bulk" className="space-y-3 mt-3">
+            <p className="text-xs text-muted-foreground">
+              All elements using <code className="bg-muted px-1 rounded font-mono text-[11px]">{'{{serial}}'}</code> (text, barcode, QR) will auto-update for each serial.
+            </p>
             <div>
               <Label className="text-xs text-muted-foreground">Prefix</Label>
               <Input value={serialPrefix} onChange={e => setSerialPrefix(e.target.value)} className="mt-1 h-8 text-sm" />
@@ -280,8 +305,18 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
                 <Input type="number" value={serialPadding} onChange={e => setSerialPadding(Number(e.target.value))} className="mt-1 h-8 text-sm" min={1} max={10} />
               </div>
             </div>
-            <div className="bg-muted rounded p-2 text-xs">
-              Preview: <span className="font-mono">{serialPrefix}{String(serialStart).padStart(serialPadding, '0')}</span> → <span className="font-mono">{serialPrefix}{String(serialEnd).padStart(serialPadding, '0')}</span> ({serialEnd - serialStart + 1} labels)
+            <div className="bg-muted rounded-lg p-3 text-xs space-y-1">
+              <div>
+                <span className="text-muted-foreground">First: </span>
+                <span className="font-mono font-medium text-foreground">{serialPrefix}{String(serialStart).padStart(serialPadding, '0')}</span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Last: </span>
+                <span className="font-mono font-medium text-foreground">{serialPrefix}{String(serialEnd).padStart(serialPadding, '0')}</span>
+              </div>
+              <div className="text-muted-foreground">
+                {totalLabels} unique labels → {totalPages} page{totalPages !== 1 ? 's' : ''} ({cols}×{rows} per page)
+              </div>
             </div>
             <div>
               <input type="file" accept=".csv,.txt" onChange={handleCSVUpload} className="hidden" id="csv-upload" />
@@ -293,12 +328,11 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
           </TabsContent>
 
           <TabsContent value="single" className="mt-3">
-            <p className="text-xs text-muted-foreground">Exports the current canvas design repeated across the page grid.</p>
+            <p className="text-xs text-muted-foreground">Exports the current canvas design repeated across the page grid ({cols}×{rows} = {cols * rows} per page).</p>
           </TabsContent>
         </Tabs>
 
         <div className="space-y-4 mt-4">
-          {/* Page Size */}
           <div>
             <Label className="text-xs text-muted-foreground">Page Size</Label>
             <Select value={pageSize} onValueChange={setPageSize}>
@@ -324,7 +358,6 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
             </div>
           )}
 
-          {/* Grid */}
           <div>
             <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sticker Grid</Label>
             <div className="grid grid-cols-2 gap-2 mt-2">
@@ -339,7 +372,6 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
             </div>
           </div>
 
-          {/* Margins */}
           <div>
             <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Margins & Gaps (mm)</Label>
             <div className="grid grid-cols-4 gap-2 mt-2">
@@ -362,17 +394,19 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
             </div>
           </div>
 
-          <div className="bg-muted rounded-lg p-3 text-xs text-muted-foreground">
-            <p>Sticker size: {canvasWidth}×{canvasHeight}mm</p>
-            <p>Per page: {cols * rows} stickers</p>
-            {exportMode === 'bulk' && <p>Total labels: {csvSerials.length > 0 ? csvSerials.length : serialEnd - serialStart + 1}</p>}
-          </div>
+          {/* Progress bar during export */}
+          {exporting && (
+            <div className="space-y-2">
+              <Progress value={progress} className="h-3" />
+              <p className="text-xs text-muted-foreground text-center">{progressLabel}</p>
+            </div>
+          )}
 
           <Button onClick={handleExport} disabled={exporting} className="w-full">
             {exporting ? (
-              <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Generating...</>
+              <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Generating {progress}%</>
             ) : (
-              <><Download className="w-4 h-4 mr-2" /> Export PDF</>
+              <><Download className="w-4 h-4 mr-2" /> Export {totalLabels} Label{totalLabels !== 1 ? 's' : ''} as PDF</>
             )}
           </Button>
         </div>

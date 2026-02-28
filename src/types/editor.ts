@@ -24,6 +24,7 @@ export interface CanvasElement {
   src?: string;
   textDecoration?: string;
   locked?: boolean;
+  cornerRadius?: number;
 }
 
 export interface EditorState {

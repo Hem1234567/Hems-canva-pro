@@ -392,7 +392,7 @@ const CanvasElementRenderer = ({ element: el, isSelected, onSelect, onDragStart,
           fill={el.fill}
           stroke={el.stroke}
           strokeWidth={el.strokeWidth}
-          cornerRadius={2}
+          cornerRadius={el.cornerRadius || 0}
         />
       );
     case 'circle':

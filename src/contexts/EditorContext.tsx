@@ -28,6 +28,8 @@ interface EditorContextType extends EditorState {
   deleteSelected: () => void;
   selectedElements: CanvasElement[];
   updateSelectedElements: (updates: Partial<CanvasElement>) => void;
+  alignElements: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
+  distributeElements: (direction: 'horizontal' | 'vertical') => void;
 }
 
 const EditorContext = createContext<EditorContextType | null>(null);
@@ -119,6 +121,65 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     setElements(newElements);
   }, [elements, selectedIds]);
 
+  const alignElements = useCallback((alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
+    const sel = elements.filter(el => selectedIds.has(el.id));
+    if (sel.length < 2) return;
+    let ref: number;
+    const newElements = [...elements];
+    switch (alignment) {
+      case 'left': ref = Math.min(...sel.map(e => e.x)); break;
+      case 'right': ref = Math.max(...sel.map(e => e.x + e.width)); break;
+      case 'center': { const minX = Math.min(...sel.map(e => e.x)); const maxX = Math.max(...sel.map(e => e.x + e.width)); ref = (minX + maxX) / 2; break; }
+      case 'top': ref = Math.min(...sel.map(e => e.y)); break;
+      case 'bottom': ref = Math.max(...sel.map(e => e.y + e.height)); break;
+      case 'middle': { const minY = Math.min(...sel.map(e => e.y)); const maxY = Math.max(...sel.map(e => e.y + e.height)); ref = (minY + maxY) / 2; break; }
+    }
+    for (let i = 0; i < newElements.length; i++) {
+      if (!selectedIds.has(newElements[i].id)) continue;
+      const el = newElements[i];
+      switch (alignment) {
+        case 'left': newElements[i] = { ...el, x: ref }; break;
+        case 'right': newElements[i] = { ...el, x: ref - el.width }; break;
+        case 'center': newElements[i] = { ...el, x: ref - el.width / 2 }; break;
+        case 'top': newElements[i] = { ...el, y: ref }; break;
+        case 'bottom': newElements[i] = { ...el, y: ref - el.height }; break;
+        case 'middle': newElements[i] = { ...el, y: ref - el.height / 2 }; break;
+      }
+    }
+    setElements(newElements);
+    pushHistory(newElements);
+  }, [elements, selectedIds, pushHistory]);
+
+  const distributeElements = useCallback((direction: 'horizontal' | 'vertical') => {
+    const sel = elements.filter(el => selectedIds.has(el.id));
+    if (sel.length < 3) return;
+    const sorted = [...sel].sort((a, b) => direction === 'horizontal' ? a.x - b.x : a.y - b.y);
+    const first = sorted[0];
+    const last = sorted[sorted.length - 1];
+    const totalSize = direction === 'horizontal'
+      ? sorted.reduce((s, e) => s + e.width, 0)
+      : sorted.reduce((s, e) => s + e.height, 0);
+    const totalSpace = direction === 'horizontal'
+      ? (last.x + last.width) - first.x - totalSize
+      : (last.y + last.height) - first.y - totalSize;
+    const gap = totalSpace / (sorted.length - 1);
+    const newElements = [...elements];
+    let pos = direction === 'horizontal' ? first.x : first.y;
+    for (const s of sorted) {
+      const idx = newElements.findIndex(e => e.id === s.id);
+      if (idx === -1) continue;
+      if (direction === 'horizontal') {
+        newElements[idx] = { ...newElements[idx], x: pos };
+        pos += newElements[idx].width + gap;
+      } else {
+        newElements[idx] = { ...newElements[idx], y: pos };
+        pos += newElements[idx].height + gap;
+      }
+    }
+    setElements(newElements);
+    pushHistory(newElements);
+  }, [elements, selectedIds, pushHistory]);
+
   const updateElement = useCallback((id: string, updates: Partial<CanvasElement>) => {
     const newElements = elements.map(el => el.id === id ? { ...el, ...updates } : el);
     setElements(newElements);
@@ -207,6 +268,7 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
       undo, redo, duplicateElement, moveLayer, loadElements,
       copyElement, pasteElement, setSnapEnabled, reorderElements,
       toggleSelectElement, selectAll, deleteSelected, updateSelectedElements,
+      alignElements, distributeElements,
     }}>
       {children}
     </EditorContext.Provider>

@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useEditor } from '@/contexts/EditorContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Trash2, Copy, ChevronUp, ChevronDown, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Eye, EyeOff, GripVertical } from 'lucide-react';
+import { Trash2, Copy, ChevronUp, ChevronDown, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Lock, Unlock, GripVertical } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CanvasElement } from '@/types/editor';
 
 const GOOGLE_FONTS = [
   'Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Oswald', 'Poppins',
@@ -98,6 +99,9 @@ const RightPanel = () => {
           {el.type.charAt(0).toUpperCase() + el.type.slice(1)} Properties
         </h3>
         <div className="flex gap-1">
+          <Button variant={el.locked ? 'default' : 'ghost'} size="icon" className="h-7 w-7" onClick={() => update({ locked: !el.locked })} title={el.locked ? 'Unlock' : 'Lock'}>
+            {el.locked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
+          </Button>
           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => duplicateElement(el.id)} title="Duplicate">
             <Copy className="w-3.5 h-3.5" />
           </Button>
@@ -254,7 +258,6 @@ const Field = ({ label, value, onChange }: { label: string; value: number; onCha
   </div>
 );
 
-import { CanvasElement } from '@/types/editor';
 
 const LayersList = ({ elements, selectedId, onSelect, onMove, onDelete }: {
   elements: CanvasElement[];
@@ -262,35 +265,70 @@ const LayersList = ({ elements, selectedId, onSelect, onMove, onDelete }: {
   onSelect: (id: string) => void;
   onMove: (id: string, dir: 'up' | 'down') => void;
   onDelete: (id: string) => void;
-}) => (
-  <div className="space-y-1">
-    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Layers</p>
-    {[...elements].reverse().map((el) => {
-      const label = el.type === 'text' ? (el.text?.slice(0, 16) || 'Text') : el.type;
-      const isActive = el.id === selectedId;
-      return (
-        <div
-          key={el.id}
-          onClick={() => onSelect(el.id)}
-          className={`flex items-center gap-2 px-2 py-1.5 rounded text-xs cursor-pointer transition-colors ${
-            isActive ? 'bg-primary/10 text-primary border border-primary/30' : 'hover:bg-muted border border-transparent'
-          }`}
-        >
-          <span className="capitalize truncate flex-1">{label}</span>
-          <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0" onClick={e => { e.stopPropagation(); onMove(el.id, 'up'); }}>
-            <ChevronUp className="w-3 h-3" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0" onClick={e => { e.stopPropagation(); onMove(el.id, 'down'); }}>
-            <ChevronDown className="w-3 h-3" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0 text-destructive" onClick={e => { e.stopPropagation(); onDelete(el.id); }}>
-            <Trash2 className="w-3 h-3" />
-          </Button>
-        </div>
-      );
-    })}
-    {elements.length === 0 && <p className="text-xs text-muted-foreground">No elements yet</p>}
-  </div>
-);
+}) => {
+  const { updateElement, reorderElements } = useEditor();
+  const dragItem = useRef<number | null>(null);
+  const dragOverItem = useRef<number | null>(null);
+
+  // We display reversed (top layer first), so indices map reversed
+  const reversed = [...elements].reverse();
+
+  const handleDragStart = (displayIdx: number) => {
+    dragItem.current = displayIdx;
+  };
+
+  const handleDragEnter = (displayIdx: number) => {
+    dragOverItem.current = displayIdx;
+  };
+
+  const handleDragEnd = () => {
+    if (dragItem.current === null || dragOverItem.current === null || dragItem.current === dragOverItem.current) {
+      dragItem.current = null;
+      dragOverItem.current = null;
+      return;
+    }
+    // Convert display indices (reversed) to actual element indices
+    const fromActual = elements.length - 1 - dragItem.current;
+    const toActual = elements.length - 1 - dragOverItem.current;
+    reorderElements(fromActual, toActual);
+    dragItem.current = null;
+    dragOverItem.current = null;
+  };
+
+  return (
+    <div className="space-y-1">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Layers</p>
+      {reversed.map((el, displayIdx) => {
+        const label = el.type === 'text' ? (el.text?.slice(0, 16) || 'Text') : el.type;
+        const isActive = el.id === selectedId;
+        return (
+          <div
+            key={el.id}
+            draggable
+            onDragStart={() => handleDragStart(displayIdx)}
+            onDragEnter={() => handleDragEnter(displayIdx)}
+            onDragEnd={handleDragEnd}
+            onDragOver={e => e.preventDefault()}
+            onClick={() => onSelect(el.id)}
+            className={`flex items-center gap-1.5 px-2 py-1.5 rounded text-xs cursor-grab active:cursor-grabbing transition-colors ${
+              isActive ? 'bg-primary/10 text-primary border border-primary/30' : 'hover:bg-muted border border-transparent'
+            }`}
+          >
+            <GripVertical className="w-3 h-3 text-muted-foreground shrink-0" />
+            {el.locked && <Lock className="w-3 h-3 text-muted-foreground shrink-0" />}
+            <span className="capitalize truncate flex-1">{label}</span>
+            <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0" onClick={e => { e.stopPropagation(); updateElement(el.id, { locked: !el.locked }); }} title={el.locked ? 'Unlock' : 'Lock'}>
+              {el.locked ? <Lock className="w-3 h-3" /> : <Unlock className="w-3 h-3" />}
+            </Button>
+            <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0 text-destructive" onClick={e => { e.stopPropagation(); onDelete(el.id); }}>
+              <Trash2 className="w-3 h-3" />
+            </Button>
+          </div>
+        );
+      })}
+      {elements.length === 0 && <p className="text-xs text-muted-foreground">No elements yet</p>}
+    </div>
+  );
+};
 
 export default RightPanel;

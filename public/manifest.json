@@ -1,0 +1,16 @@
+{
+  "name": "LabelForge",
+  "short_name": "LabelForge",
+  "description": "Professional label design tool with barcodes, QR codes, and serial number generation",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#D4AF37",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}

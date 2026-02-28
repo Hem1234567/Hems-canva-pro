@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { Type, BarChart3, QrCode, Square, Circle, Minus, Image, Upload, Variable, LayoutTemplate } from 'lucide-react';
+import { Type, BarChart3, QrCode, Square, Circle, Minus, Image, Upload, Variable, LayoutTemplate, Hash } from 'lucide-react';
 import { useEditor } from '@/contexts/EditorContext';
 import { ElementType } from '@/types/editor';
 import { cn } from '@/lib/utils';
 import { templates, instantiateTemplate } from '@/data/templates';
+import SerialGenerator from './SerialGenerator';
+import ImageUploader from './ImageUploader';
 
 const tabs = [
   { id: 'templates', label: 'Templates', icon: LayoutTemplate },
@@ -12,8 +14,8 @@ const tabs = [
   { id: 'qrcode', label: 'QR Code', icon: QrCode },
   { id: 'shapes', label: 'Shapes', icon: Square },
   { id: 'images', label: 'Images', icon: Image },
+  { id: 'serials', label: 'Serials', icon: Hash },
   { id: 'variables', label: 'Variables', icon: Variable },
-  { id: 'uploads', label: 'Uploads', icon: Upload },
 ] as const;
 
 type TabId = typeof tabs[number]['id'];
@@ -29,9 +31,9 @@ const LeftSidebar = () => {
       loadElements(instantiateTemplate(template));
     }
   };
+
   return (
     <aside className="w-[280px] bg-surface border-r border-border flex shrink-0 h-full">
-      {/* Tab icons */}
       <div className="w-14 border-r border-border bg-card flex flex-col items-center py-3 gap-1">
         {tabs.map(tab => (
           <button
@@ -49,7 +51,6 @@ const LeftSidebar = () => {
         ))}
       </div>
 
-      {/* Tab content */}
       <div className="flex-1 p-4 overflow-y-auto">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
           {tabs.find(t => t.id === activeTab)?.label}
@@ -114,11 +115,12 @@ const LeftSidebar = () => {
           </div>
         )}
 
-        {(activeTab === 'images' || activeTab === 'uploads') && (
-          <div className="border-2 border-dashed border-border rounded-lg p-8 text-center text-muted-foreground text-sm">
-            <Upload className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p>Drag & drop or click to upload</p>
-          </div>
+        {activeTab === 'images' && <ImageUploader />}
+
+        {activeTab === 'serials' && (
+          <SerialGenerator onGenerate={(serials) => {
+            console.log('Generated serials:', serials.length);
+          }} />
         )}
       </div>
     </aside>

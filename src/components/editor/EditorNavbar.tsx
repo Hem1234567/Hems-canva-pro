@@ -1,7 +1,8 @@
-import { Undo2, Redo2, ZoomIn, ZoomOut, Eye } from 'lucide-react';
+import { Undo2, Redo2, ZoomIn, ZoomOut, Eye, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEditor } from '@/contexts/EditorContext';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import ExportDialog from './ExportDialog';
 import Konva from 'konva';
 
@@ -15,7 +16,12 @@ const EditorNavbar = ({ stageRef }: EditorNavbarProps) => {
 
   return (
     <header className="h-16 border-b border-border bg-card flex items-center px-4 gap-3 shrink-0">
-      <div className="flex items-center gap-2 mr-4">
+      <Link to="/dashboard">
+        <Button variant="ghost" size="icon" title="Back to Dashboard">
+          <ArrowLeft className="w-4 h-4" />
+        </Button>
+      </Link>
+      <div className="flex items-center gap-2">
         <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
           <span className="text-primary-foreground font-bold text-sm">LF</span>
         </div>

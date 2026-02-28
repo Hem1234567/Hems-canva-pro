@@ -92,10 +92,13 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
     layer.add(new Konva.Rect({ x: 0, y: 0, width: pixelW, height: pixelH, fill: '#FFFFFF' }));
 
     for (const el of elements) {
-      const text = el.text?.replace(/\{\{serial\}\}/g, serial)
+      const rawText = el.text || '';
+      const text = rawText.replace(/\{\{serial\}\}/g, serial)
         .replace(/\{\{date\}\}/g, new Date().toISOString().split('T')[0])
         .replace(/\{\{batch\}\}/g, 'BATCH-001')
-        .replace(/\{\{prefix\}\}/g, serialPrefix) || '';
+        .replace(/\{\{prefix\}\}/g, serialPrefix);
+      // For barcode/qrcode: use replaced text, or fall back to raw serial
+      const barcodeValue = text.length > 0 ? text : serial;
 
       switch (el.type) {
         case 'text': {
@@ -135,7 +138,7 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
         case 'barcode': {
           try {
             const canvas = document.createElement('canvas');
-            JsBarcode(canvas, text || serial, {
+            JsBarcode(canvas, barcodeValue, {
               format: el.barcodeFormat || 'CODE128',
               width: 2, height: 60, displayValue: false,
               background: 'transparent', lineColor: el.fill,
@@ -152,7 +155,7 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
         }
         case 'qrcode': {
           try {
-            const qrDataUrl = await QRCode.toDataURL(text || serial, {
+            const qrDataUrl = await QRCode.toDataURL(barcodeValue, {
               width: el.width, margin: 0,
               color: { dark: el.fill, light: '#FFFFFF00' },
             });
@@ -184,7 +187,9 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
       }
     }
 
-    layer.draw();
+    layer.batchDraw();
+    // Wait a tick to ensure canvas is fully rendered before capture
+    await new Promise(r => setTimeout(r, 50));
     const dataUrl = offStage.toDataURL({ pixelRatio: 2 });
     offStage.destroy();
     document.body.removeChild(container);

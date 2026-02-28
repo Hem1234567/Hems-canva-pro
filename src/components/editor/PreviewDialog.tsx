@@ -49,10 +49,12 @@ const PreviewDialog = ({ open, onOpenChange }: PreviewDialogProps) => {
     layer.add(new Konva.Rect({ x: 0, y: 0, width: pixelW, height: pixelH, fill: '#FFFFFF' }));
 
     for (const el of elements) {
-      const text = el.text?.replace(/\{\{serial\}\}/g, serial)
+      const rawText = el.text || '';
+      const text = rawText.replace(/\{\{serial\}\}/g, serial)
         .replace(/\{\{date\}\}/g, new Date().toISOString().split('T')[0])
         .replace(/\{\{batch\}\}/g, 'BATCH-001')
-        .replace(/\{\{prefix\}\}/g, serialPrefix) || '';
+        .replace(/\{\{prefix\}\}/g, serialPrefix);
+      const barcodeValue = text.length > 0 ? text : serial;
 
       switch (el.type) {
         case 'text':
@@ -88,7 +90,7 @@ const PreviewDialog = ({ open, onOpenChange }: PreviewDialogProps) => {
         case 'barcode':
           try {
             const canvas = document.createElement('canvas');
-            JsBarcode(canvas, text || serial, {
+            JsBarcode(canvas, barcodeValue, {
               format: el.barcodeFormat || 'CODE128',
               width: 2, height: 60, displayValue: false,
               background: 'transparent', lineColor: el.fill,
@@ -104,7 +106,7 @@ const PreviewDialog = ({ open, onOpenChange }: PreviewDialogProps) => {
           break;
         case 'qrcode':
           try {
-            const qrUrl = await QRCode.toDataURL(text || serial, {
+            const qrUrl = await QRCode.toDataURL(barcodeValue, {
               width: el.width, margin: 0,
               color: { dark: el.fill, light: '#FFFFFF00' },
             });

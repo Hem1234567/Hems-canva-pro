@@ -16,7 +16,7 @@ const EditorInner = () => {
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
   const canvasRef = useRef<DesignCanvasHandle>(null);
-  const { loadElements, setProjectName, setCanvasSize, elements, projectName, canvasWidth, canvasHeight } = useEditor();
+  const { loadElements, setProjectName, setCanvasSize, elements, projectName, canvasWidth, canvasHeight, undo, redo, duplicateElement, selectedId } = useEditor();
   const [loaded, setLoaded] = useState(false);
   const saveTimeout = useRef<ReturnType<typeof setTimeout>>();
 
@@ -62,6 +62,29 @@ const EditorInner = () => {
     saveTimeout.current = setTimeout(saveProject, 2000);
     return () => { if (saveTimeout.current) clearTimeout(saveTimeout.current); };
   }, [elements, projectName, canvasWidth, canvasHeight, saveProject]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && e.key === 's') {
+        e.preventDefault();
+        saveProject().then(() => toast.success('Project saved'));
+      } else if (mod && e.shiftKey && e.key === 'z') {
+        e.preventDefault();
+        redo();
+      } else if (mod && e.key === 'z') {
+        e.preventDefault();
+        undo();
+      } else if (mod && e.key === 'd') {
+        e.preventDefault();
+        if (selectedId) duplicateElement(selectedId);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [saveProject, undo, redo, duplicateElement, selectedId]);
 
   if (authLoading || !loaded) return <div className="min-h-screen bg-background flex items-center justify-center"><p className="text-muted-foreground">Loading editor...</p></div>;
 

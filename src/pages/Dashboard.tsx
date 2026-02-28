@@ -3,7 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Plus, Home, FolderOpen, LogOut, Trash2, Clock } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Plus, Home, FolderOpen, LogOut, Trash2, Clock, Copy, Pencil, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -13,6 +14,7 @@ interface Project {
   name: string;
   canvas_width: number;
   canvas_height: number;
+  elements: any;
   updated_at: string;
   created_at: string;
 }
@@ -39,7 +41,7 @@ const Dashboard = () => {
     setLoading(true);
     const { data, error } = await supabase
       .from('projects')
-      .select('id, name, canvas_width, canvas_height, updated_at, created_at')
+      .select('id, name, canvas_width, canvas_height, elements, updated_at, created_at')
       .order('updated_at', { ascending: false });
     if (error) toast.error('Failed to load projects');
     setProjects(data || []);
@@ -62,6 +64,31 @@ const Dashboard = () => {
     if (error) { toast.error('Failed to delete'); return; }
     setProjects(prev => prev.filter(p => p.id !== id));
     toast.success('Project deleted');
+  };
+
+  const duplicateProject = async (project: Project) => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('projects')
+      .insert({
+        user_id: user.id,
+        name: `${project.name} (Copy)`,
+        canvas_width: project.canvas_width,
+        canvas_height: project.canvas_height,
+        elements: project.elements,
+      })
+      .select('id, name, canvas_width, canvas_height, elements, updated_at, created_at')
+      .single();
+    if (error) { toast.error('Failed to duplicate'); return; }
+    setProjects(prev => [data, ...prev]);
+    toast.success('Project duplicated');
+  };
+
+  const renameProject = async (id: string, newName: string) => {
+    const { error } = await supabase.from('projects').update({ name: newName }).eq('id', id);
+    if (error) { toast.error('Failed to rename'); return; }
+    setProjects(prev => prev.map(p => p.id === id ? { ...p, name: newName } : p));
+    toast.success('Project renamed');
   };
 
   const handleLogout = async () => {
@@ -123,7 +150,7 @@ const Dashboard = () => {
                 <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
                   <Clock className="w-5 h-5 text-muted-foreground" /> Recent Projects
                 </h2>
-                <ProjectGrid projects={recentProjects} onDelete={deleteProject} />
+                <ProjectGrid projects={recentProjects} onDelete={deleteProject} onDuplicate={duplicateProject} onRename={renameProject} />
               </>
             )}
           </>
@@ -148,7 +175,7 @@ const Dashboard = () => {
                 </Button>
               </div>
             ) : (
-              <ProjectGrid projects={projects} onDelete={deleteProject} />
+              <ProjectGrid projects={projects} onDelete={deleteProject} onDuplicate={duplicateProject} onRename={renameProject} />
             )}
           </>
         )}
@@ -170,30 +197,57 @@ const SidebarBtn = ({ icon: Icon, label, active, onClick }: { icon: any; label: 
   </button>
 );
 
-const ProjectGrid = ({ projects, onDelete }: { projects: Project[]; onDelete: (id: string) => void }) => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-    {projects.map(p => (
-      <div key={p.id} className="border border-border rounded-xl bg-card overflow-hidden hover:border-primary/50 transition-colors group">
-        <Link to={`/editor/${p.id}`} className="block p-4">
-          <div className="w-full h-28 bg-muted rounded-md mb-3 flex items-center justify-center text-muted-foreground text-xs">
-            {p.canvas_width} × {p.canvas_height} mm
+const ProjectCard = ({ project, onDelete, onDuplicate, onRename }: { project: Project; onDelete: (id: string) => void; onDuplicate: (p: Project) => void; onRename: (id: string, name: string) => void }) => {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(project.name);
+
+  const handleSaveRename = () => {
+    if (name.trim() && name !== project.name) {
+      onRename(project.id, name.trim());
+    }
+    setEditing(false);
+  };
+
+  return (
+    <div className="border border-border rounded-xl bg-card overflow-hidden hover:border-primary/50 transition-colors group">
+      <Link to={`/editor/${project.id}`} className="block p-4">
+        <div className="w-full h-28 bg-muted rounded-md mb-3 flex items-center justify-center text-muted-foreground text-xs">
+          {project.canvas_width} × {project.canvas_height} mm
+        </div>
+      </Link>
+      <div className="px-4 pb-3">
+        {editing ? (
+          <div className="flex items-center gap-1">
+            <Input value={name} onChange={e => setName(e.target.value)} className="h-7 text-sm" autoFocus onKeyDown={e => e.key === 'Enter' && handleSaveRename()} />
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={handleSaveRename}><Check className="w-3.5 h-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => { setName(project.name); setEditing(false); }}><X className="w-3.5 h-3.5" /></Button>
           </div>
-          <h3 className="font-medium text-foreground truncate">{p.name}</h3>
-          <p className="text-xs text-muted-foreground mt-1">
-            Updated {format(new Date(p.updated_at), 'MMM d, yyyy')}
-          </p>
-        </Link>
-        <div className="px-4 pb-3 flex justify-end">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={(e) => { e.preventDefault(); onDelete(p.id); }}
-          >
+        ) : (
+          <h3 className="font-medium text-foreground truncate">{project.name}</h3>
+        )}
+        <p className="text-xs text-muted-foreground mt-1">
+          Updated {format(new Date(project.updated_at), 'MMM d, yyyy')}
+        </p>
+        <div className="flex justify-end gap-1 mt-2">
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setEditing(true)} title="Rename">
+            <Pencil className="w-3.5 h-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => onDuplicate(project)} title="Duplicate">
+            <Copy className="w-3.5 h-3.5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => onDelete(project.id)} title="Delete">
             <Trash2 className="w-3.5 h-3.5" />
           </Button>
         </div>
       </div>
+    </div>
+  );
+};
+
+const ProjectGrid = ({ projects, onDelete, onDuplicate, onRename }: { projects: Project[]; onDelete: (id: string) => void; onDuplicate: (p: Project) => void; onRename: (id: string, name: string) => void }) => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    {projects.map(p => (
+      <ProjectCard key={p.id} project={p} onDelete={onDelete} onDuplicate={onDuplicate} onRename={onRename} />
     ))}
   </div>
 );

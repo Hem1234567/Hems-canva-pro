@@ -1,20 +1,27 @@
-import { useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from 'react';
+import { useRef, useEffect, useCallback, forwardRef, useImperativeHandle, useState } from 'react';
 import { Stage, Layer, Rect, Circle, Text, Line, Transformer } from 'react-konva';
 import { useEditor } from '@/contexts/EditorContext';
 import { CanvasElement } from '@/types/editor';
 import Konva from 'konva';
 import BarcodeRenderer from './BarcodeRenderer';
 import QRCodeRenderer from './QRCodeRenderer';
+import ImageRenderer from './ImageRenderer';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export interface DesignCanvasHandle {
   getStage: () => Konva.Stage | null;
 }
 
 const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
-  const { elements, selectedId, selectElement, updateElement, zoom, canvasWidth, canvasHeight, deleteElement } = useEditor();
+  const { elements, selectedId, selectElement, updateElement, zoom, canvasWidth, canvasHeight, deleteElement, addImageElement } = useEditor();
   const transformerRef = useRef<Konva.Transformer>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const selectedRef = useRef<Konva.Node>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const { user } = useAuth();
 
   useImperativeHandle(ref, () => ({
     getStage: () => stageRef.current,
@@ -74,11 +81,34 @@ const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
     });
   };
 
+  // Drag & drop image onto canvas
+  const handleFileDrop = useCallback(async (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file || !file.type.startsWith('image/') || !user) return;
+
+    const ext = file.name.split('.').pop();
+    const path = `${user.id}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('user-uploads').upload(path, file);
+    if (error) { toast.error('Upload failed'); return; }
+    const { data: { publicUrl } } = supabase.storage.from('user-uploads').getPublicUrl(path);
+
+    addImageElement(publicUrl);
+    toast.success('Image added to canvas');
+  }, [user, addImageElement]);
+
   const pixelW = canvasWidth * 3;
   const pixelH = canvasHeight * 3;
 
   return (
-    <div className="flex-1 bg-canvas overflow-auto flex items-center justify-center p-8">
+    <div
+      ref={containerRef}
+      className={`flex-1 bg-canvas overflow-auto flex items-center justify-center p-8 ${dragOver ? 'ring-2 ring-primary ring-inset' : ''}`}
+      onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={handleFileDrop}
+    >
       <div
         style={{
           transform: `scale(${zoom})`,
@@ -209,6 +239,8 @@ const CanvasElementRenderer = ({ element: el, isSelected, onSelect, onDragEnd, o
       return <BarcodeRenderer element={el} commonProps={commonProps} />;
     case 'qrcode':
       return <QRCodeRenderer element={el} commonProps={commonProps} />;
+    case 'image':
+      return <ImageRenderer element={el} commonProps={commonProps} />;
     default:
       return null;
   }

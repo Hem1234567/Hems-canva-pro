@@ -1,12 +1,39 @@
+import { useState, useEffect } from 'react';
 import { useEditor } from '@/contexts/EditorContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Trash2, Copy, ChevronUp, ChevronDown } from 'lucide-react';
+import { Trash2, Copy, ChevronUp, ChevronDown, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const GOOGLE_FONTS = [
+  'Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Oswald', 'Poppins',
+  'Raleway', 'Nunito', 'Ubuntu', 'Playfair Display', 'Merriweather',
+  'Source Code Pro', 'Fira Code', 'JetBrains Mono', 'PT Sans', 'Noto Sans',
+  'Work Sans', 'Quicksand', 'Barlow', 'Rubik', 'Mulish', 'Karla',
+  'Josefin Sans', 'Libre Baskerville', 'Crimson Text', 'DM Sans', 'Space Grotesk',
+  'Archivo', 'Sora', 'Outfit', 'Plus Jakarta Sans',
+];
+
+const loadedFonts = new Set<string>(['Inter']);
+
+const loadGoogleFont = (fontFamily: string) => {
+  if (loadedFonts.has(fontFamily)) return;
+  loadedFonts.add(fontFamily);
+  const link = document.createElement('link');
+  link.href = `https://fonts.googleapis.com/css2?family=${fontFamily.replace(/ /g, '+')}:wght@300;400;500;600;700;800&display=swap`;
+  link.rel = 'stylesheet';
+  document.head.appendChild(link);
+};
 
 const RightPanel = () => {
   const { selectedElement, updateElement, deleteElement, duplicateElement, moveLayer, canvasWidth, canvasHeight, setCanvasSize } = useEditor();
+
+  // Always call hooks before conditional returns
+  useEffect(() => {
+    if (selectedElement?.fontFamily) loadGoogleFont(selectedElement.fontFamily);
+  }, [selectedElement?.fontFamily]);
 
   if (!selectedElement) {
     return (
@@ -31,9 +58,41 @@ const RightPanel = () => {
   const el = selectedElement;
   const update = (updates: Record<string, any>) => updateElement(el.id, updates);
 
+  const isBold = el.fontStyle?.includes('bold') || false;
+  const isItalic = el.fontStyle?.includes('italic') || false;
+  const hasUnderline = el.textDecoration === 'underline';
+
+  const toggleBold = () => {
+    let style = el.fontStyle || 'normal';
+    if (isBold) {
+      style = style.replace('bold', '').trim() || 'normal';
+    } else {
+      style = style === 'normal' ? 'bold' : `bold ${style}`;
+    }
+    update({ fontStyle: style });
+  };
+
+  const toggleItalic = () => {
+    let style = el.fontStyle || 'normal';
+    if (isItalic) {
+      style = style.replace('italic', '').trim() || 'normal';
+    } else {
+      style = style === 'normal' ? 'italic' : `${style} italic`;
+    }
+    update({ fontStyle: style });
+  };
+
+  const toggleUnderline = () => {
+    update({ textDecoration: hasUnderline ? '' : 'underline' });
+  };
+
+  const handleFontChange = (font: string) => {
+    loadGoogleFont(font);
+    update({ fontFamily: font });
+  };
+
   return (
     <aside className="w-[300px] border-l border-border bg-card p-4 shrink-0 overflow-y-auto">
-      {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {el.type.charAt(0).toUpperCase() + el.type.slice(1)} Properties
@@ -49,7 +108,6 @@ const RightPanel = () => {
       </div>
 
       <div className="space-y-4">
-        {/* Position & Size */}
         <Section title="Position & Size">
           <div className="grid grid-cols-2 gap-2">
             <Field label="X" value={Math.round(el.x)} onChange={v => update({ x: v })} />
@@ -59,12 +117,10 @@ const RightPanel = () => {
           </div>
         </Section>
 
-        {/* Rotation */}
         <Section title="Rotation">
           <Field label="Angle" value={el.rotation} onChange={v => update({ rotation: v })} />
         </Section>
 
-        {/* Text Properties */}
         {(el.type === 'text' || el.type === 'barcode') && (
           <Section title="Text Content">
             <div>
@@ -72,15 +128,68 @@ const RightPanel = () => {
               <Input value={el.text || ''} onChange={e => update({ text: e.target.value })} className="mt-1 text-sm" />
             </div>
             {el.type === 'text' && (
-              <div className="grid grid-cols-2 gap-2 mt-2">
-                <Field label="Font Size" value={el.fontSize || 16} onChange={v => update({ fontSize: v })} />
-                <Field label="Spacing" value={el.letterSpacing || 0} onChange={v => update({ letterSpacing: v })} />
-              </div>
+              <>
+                <div className="mt-2">
+                  <Label className="text-xs text-muted-foreground">Font Family</Label>
+                  <Select value={el.fontFamily || 'Inter'} onValueChange={handleFontChange}>
+                    <SelectTrigger className="mt-1 h-8 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-60">
+                      {GOOGLE_FONTS.map(f => (
+                        <SelectItem key={f} value={f} className="text-xs">
+                          <span style={{ fontFamily: f }}>{f}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-2">
+                  <Field label="Font Size" value={el.fontSize || 16} onChange={v => update({ fontSize: v })} />
+                  <Field label="Spacing" value={el.letterSpacing || 0} onChange={v => update({ letterSpacing: v })} />
+                </div>
+
+                <div className="flex gap-1 mt-2">
+                  <Button variant={isBold ? 'default' : 'outline'} size="icon" className="h-8 w-8" onClick={toggleBold} title="Bold">
+                    <Bold className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button variant={isItalic ? 'default' : 'outline'} size="icon" className="h-8 w-8" onClick={toggleItalic} title="Italic">
+                    <Italic className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button variant={hasUnderline ? 'default' : 'outline'} size="icon" className="h-8 w-8" onClick={toggleUnderline} title="Underline">
+                    <Underline className="w-3.5 h-3.5" />
+                  </Button>
+                  <div className="border-l border-border mx-1" />
+                  {['left', 'center', 'right'].map(a => (
+                    <Button
+                      key={a}
+                      variant={el.align === a ? 'default' : 'outline'}
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => update({ align: a })}
+                      title={`Align ${a}`}
+                    >
+                      {a === 'left' && <AlignLeft className="w-3.5 h-3.5" />}
+                      {a === 'center' && <AlignCenter className="w-3.5 h-3.5" />}
+                      {a === 'right' && <AlignRight className="w-3.5 h-3.5" />}
+                    </Button>
+                  ))}
+                </div>
+              </>
             )}
           </Section>
         )}
 
-        {/* Colors */}
+        {el.type === 'image' && (
+          <Section title="Image Source">
+            <div>
+              <Label className="text-xs text-muted-foreground">URL</Label>
+              <Input value={el.src || ''} onChange={e => update({ src: e.target.value })} className="mt-1 text-xs" placeholder="https://..." />
+            </div>
+          </Section>
+        )}
+
         <Section title="Colors">
           <div className="flex items-center gap-3">
             <div>
@@ -97,7 +206,6 @@ const RightPanel = () => {
           </div>
         </Section>
 
-        {/* Opacity */}
         <Section title="Opacity">
           <input
             type="range" min={0} max={1} step={0.05} value={el.opacity}
@@ -107,7 +215,6 @@ const RightPanel = () => {
           <span className="text-xs text-muted-foreground">{Math.round(el.opacity * 100)}%</span>
         </Section>
 
-        {/* Layer */}
         <Section title="Layer Order">
           <div className="flex gap-2">
             <Button variant="outline" size="sm" className="flex-1 gap-1" onClick={() => moveLayer(el.id, 'up')}>
@@ -119,7 +226,6 @@ const RightPanel = () => {
           </div>
         </Section>
 
-        {/* Variable binding */}
         {(el.type === 'text' || el.type === 'barcode' || el.type === 'qrcode') && (
           <Section title="Variable Binding">
             <div className="flex flex-wrap gap-1.5">

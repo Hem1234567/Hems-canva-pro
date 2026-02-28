@@ -200,6 +200,8 @@ const CanvasElementRenderer = ({ element: el, isSelected, onSelect, onDragEnd, o
           fill={el.fill}
           width={el.width}
           letterSpacing={el.letterSpacing || 0}
+          align={el.align || 'left'}
+          textDecoration={el.textDecoration || ''}
         />
       );
     case 'rect':

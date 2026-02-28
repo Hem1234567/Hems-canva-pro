@@ -22,6 +22,7 @@ export interface CanvasElement {
   variable?: string;
   barcodeFormat?: string;
   src?: string;
+  textDecoration?: string;
 }
 
 export interface EditorState {

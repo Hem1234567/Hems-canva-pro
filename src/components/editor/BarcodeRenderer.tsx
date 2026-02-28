@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Group, Image as KonvaImage, Text } from 'react-konva';
+import { Group, Image as KonvaImage, Text, Rect } from 'react-konva';
 import Konva from 'konva';
 import JsBarcode from 'jsbarcode';
 import { CanvasElement } from '@/types/editor';
@@ -61,6 +61,7 @@ const BarcodeRenderer = ({ element: el, commonProps }: BarcodeRendererProps) => 
 
   return (
     <Group {...commonProps}>
+      <Rect width={el.width} height={el.height} fill="transparent" listening={true} />
       <KonvaImage
         ref={imageRef}
         image={undefined as any}

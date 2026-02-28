@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { Group, Image as KonvaImage } from 'react-konva';
+import { Group, Image as KonvaImage, Rect } from 'react-konva';
 import Konva from 'konva';
 import QRCode from 'qrcode';
 import { CanvasElement } from '@/types/editor';
@@ -61,6 +61,7 @@ const QRCodeRenderer = ({ element: el, commonProps }: QRCodeRendererProps) => {
 
   return (
     <Group {...commonProps}>
+      <Rect width={el.width} height={el.height} fill="transparent" listening={true} />
       <KonvaImage
         ref={imageRef}
         image={undefined as any}

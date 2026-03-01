@@ -112,7 +112,7 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
     return serials;
   };
 
-  const renderLabelImage = async (serial: string, csvRow?: Record<string, string>): Promise<string> => {
+  const renderLabelImage = async (serial: string, csvRow?: Record<string, string>, skipVariableReplace = false): Promise<string> => {
     const pixelW = canvasWidth * 3;
     const pixelH = canvasHeight * 3;
     const container = document.createElement('div');
@@ -128,7 +128,8 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
 
     for (const el of elements) {
       const rawText = el.text || '';
-      const text = rawText.replace(/\{\{serial\}\}/g, serial)
+      const text = skipVariableReplace ? rawText : rawText
+        .replace(/\{\{serial\}\}/g, serial)
         .replace(/\{\{date\}\}/g, new Date().toISOString().split('T')[0])
         .replace(/\{\{batch\}\}/g, 'BATCH-001')
         .replace(/\{\{prefix\}\}/g, serialPrefix)
@@ -136,8 +137,7 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
         .replace(/\{\{designation\}\}/g, csvRow?.designation || '')
         .replace(/\{\{empId\}\}/g, csvRow?.empid || serial)
         .replace(/\{\{department\}\}/g, csvRow?.department || '');
-      // For barcode/qrcode: use replaced text, or fall back to raw serial
-      const barcodeValue = text.length > 0 ? text : serial;
+      const barcodeValue = skipVariableReplace ? (rawText || 'SAMPLE') : (text.length > 0 ? text : serial);
 
       switch (el.type) {
         case 'text': {
@@ -265,9 +265,9 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
       });
 
       if (exportMode === 'single') {
-        if (!stageRef.current) { setExporting(false); return; }
         setProgressLabel('Rendering label...');
-        const dataUrl = stageRef.current.toDataURL({ pixelRatio: 3 });
+        // Render with variables resolved (using empty serial for fixed content)
+        const dataUrl = await renderLabelImage('', undefined, true);
         for (let i = 0; i < stickersPerPage; i++) {
           const col = i % cols;
           const row = Math.floor(i / cols);

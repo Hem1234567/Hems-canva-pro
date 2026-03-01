@@ -1,4 +1,4 @@
-import { Undo2, Redo2, ZoomIn, ZoomOut, Eye, ArrowLeft, Magnet, Sparkles, Presentation } from 'lucide-react';
+import { Undo2, Redo2, ZoomIn, ZoomOut, Eye, ArrowLeft, Magnet, Sparkles, Presentation, Maximize } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEditor } from '@/contexts/EditorContext';
 import { useState } from 'react';
@@ -13,7 +13,7 @@ interface EditorNavbarProps {
 }
 
 const EditorNavbar = ({ stageRef }: EditorNavbarProps) => {
-  const { projectName, setProjectName, undo, redo, zoom, setZoom, snapEnabled, setSnapEnabled } = useEditor();
+  const { projectName, setProjectName, undo, redo, zoom, setZoom, snapEnabled, setSnapEnabled, zoomToFit } = useEditor();
   const [editing, setEditing] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [presentOpen, setPresentOpen] = useState(false);
@@ -77,6 +77,9 @@ const EditorNavbar = ({ stageRef }: EditorNavbarProps) => {
         <span className="text-xs font-medium text-muted-foreground w-10 text-center">{Math.round(zoom * 100)}%</span>
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setZoom(Math.min(3, zoom + 0.1))}>
           <ZoomIn className="w-4 h-4" />
+        </Button>
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => zoomToFit()} title="Zoom to fit">
+          <Maximize className="w-4 h-4" />
         </Button>
       </div>
 

@@ -35,7 +35,7 @@ const templateCategoryLabels: Record<string, string> = {
 
 const LeftSidebar = () => {
   const [activeTab, setActiveTab] = useState<TabId>('templates');
-  const { addElement, loadElements, setCanvasSize } = useEditor();
+  const { addElement, loadElements, setCanvasSize, zoomToFit, setTemplateCategory, templateCategory } = useEditor();
   const isMobile = useIsMobile();
 
   const handleAdd = (type: ElementType) => addElement(type);
@@ -45,9 +45,9 @@ const LeftSidebar = () => {
       const tW = template.canvasWidth || 400;
       const tH = template.canvasHeight || 300;
       setCanvasSize(tW, tH);
+      setTemplateCategory(template.category);
       const pixelW = tW * 3;
       const pixelH = tH * 3;
-      // Center template elements on the pixel canvas
       const offsetX = (pixelW - tW) / 2;
       const offsetY = (pixelH - tH) / 2;
       const els = instantiateTemplate(template).map(el => ({
@@ -56,6 +56,8 @@ const LeftSidebar = () => {
         y: el.y + offsetY,
       }));
       loadElements(els);
+      // Auto zoom-to-fit after template load
+      setTimeout(() => zoomToFit(), 100);
     }
   };
 
@@ -74,6 +76,7 @@ const LeftSidebar = () => {
         handleAdd={handleAdd}
         handleLoadTemplate={handleLoadTemplate}
         templatesByCategory={templatesByCategory}
+        templateCategory={templateCategory}
       />
     );
   }
@@ -106,18 +109,51 @@ const LeftSidebar = () => {
           handleAdd={handleAdd}
           handleLoadTemplate={handleLoadTemplate}
           templatesByCategory={templatesByCategory}
+          templateCategory={templateCategory}
         />
       </div>
     </aside>
   );
 };
 
+// Variable definitions per template category
+const categoryVariables: Record<string, { group: string; vars: string[] }[]> = {
+  'label': [
+    { group: 'Label Variables', vars: ['{{serial}}', '{{date}}', '{{batch}}', '{{prefix}}', '{{name}}'] },
+  ],
+  'id-card': [
+    { group: 'ID Card Variables', vars: ['{{name}}', '{{designation}}', '{{empId}}', '{{department}}'] },
+    { group: 'Code Variables', vars: ['{{serial}}', '{{date}}'] },
+  ],
+  'business-card': [
+    { group: 'Contact Variables', vars: ['{{name}}', '{{designation}}', '{{department}}', '{{serial}}'] },
+  ],
+  'presentation': [
+    { group: 'Presentation Variables', vars: ['{{date}}', '{{name}}'] },
+  ],
+  'social-media': [
+    { group: 'Social Variables', vars: ['{{name}}', '{{date}}'] },
+  ],
+  'poster': [
+    { group: 'Poster Variables', vars: ['{{name}}', '{{date}}', '{{serial}}'] },
+  ],
+  'web-banner': [
+    { group: 'Banner Variables', vars: ['{{name}}', '{{date}}', '{{serial}}'] },
+  ],
+};
+
+const defaultVariables = [
+  { group: 'Label Variables', vars: ['{{serial}}', '{{date}}', '{{batch}}', '{{prefix}}'] },
+  { group: 'ID Card Variables', vars: ['{{name}}', '{{designation}}', '{{empId}}', '{{department}}'] },
+];
+
 // Shared tab content renderer
-const TabContent = ({ activeTab, handleAdd, handleLoadTemplate, templatesByCategory }: {
+const TabContent = ({ activeTab, handleAdd, handleLoadTemplate, templatesByCategory, templateCategory }: {
   activeTab: TabId;
   handleAdd: (type: ElementType) => void;
   handleLoadTemplate: (id: string) => void;
   templatesByCategory: Record<string, typeof templates>;
+  templateCategory: string | null;
 }) => (
   <>
     {activeTab === 'text' && (
@@ -182,26 +218,23 @@ const TabContent = ({ activeTab, handleAdd, handleLoadTemplate, templatesByCateg
 
     {activeTab === 'variables' && (
       <div className="space-y-3">
-        <div>
-          <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Label Variables</h4>
-          <div className="space-y-1.5">
-            {['{{serial}}', '{{date}}', '{{batch}}', '{{prefix}}'].map(v => (
-              <div key={v} className="border border-border rounded px-3 py-2 text-sm font-mono bg-card hover:border-primary cursor-pointer transition-colors">
-                {v}
-              </div>
-            ))}
+        {(categoryVariables[templateCategory || ''] || defaultVariables).map(group => (
+          <div key={group.group}>
+            <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">{group.group}</h4>
+            <div className="space-y-1.5">
+              {group.vars.map(v => (
+                <div key={v} className="border border-border rounded px-3 py-2 text-sm font-mono bg-card hover:border-primary cursor-pointer transition-colors">
+                  {v}
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-        <div>
-          <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">ID Card Variables</h4>
-          <div className="space-y-1.5">
-            {['{{name}}', '{{designation}}', '{{empId}}', '{{department}}'].map(v => (
-              <div key={v} className="border border-border rounded px-3 py-2 text-sm font-mono bg-card hover:border-primary cursor-pointer transition-colors">
-                {v}
-              </div>
-            ))}
-          </div>
-        </div>
+        ))}
+        {templateCategory && (
+          <p className="text-[10px] text-muted-foreground italic mt-2">
+            Showing variables for: {templateCategoryLabels[templateCategory] || templateCategory}
+          </p>
+        )}
       </div>
     )}
 
@@ -216,12 +249,13 @@ const TabContent = ({ activeTab, handleAdd, handleLoadTemplate, templatesByCateg
 );
 
 // Mobile Bottom Bar Component
-const MobileBottomBar = ({ activeTab, setActiveTab, handleAdd, handleLoadTemplate, templatesByCategory }: {
+const MobileBottomBar = ({ activeTab, setActiveTab, handleAdd, handleLoadTemplate, templatesByCategory, templateCategory }: {
   activeTab: TabId;
   setActiveTab: (tab: TabId) => void;
   handleAdd: (type: ElementType) => void;
   handleLoadTemplate: (id: string) => void;
   templatesByCategory: Record<string, typeof templates>;
+  templateCategory: string | null;
 }) => {
   const [expanded, setExpanded] = useState(false);
 
@@ -235,6 +269,7 @@ const MobileBottomBar = ({ activeTab, setActiveTab, handleAdd, handleLoadTemplat
             handleAdd={handleAdd}
             handleLoadTemplate={handleLoadTemplate}
             templatesByCategory={templatesByCategory}
+            templateCategory={templateCategory}
           />
         </div>
       )}

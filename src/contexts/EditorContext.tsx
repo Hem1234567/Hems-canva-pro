@@ -20,6 +20,9 @@ interface EditorContextType {
   snapEnabled: boolean;
   selectedIds: Set<string>;
   selectedElements: CanvasElement[];
+  templateCategory: string | null;
+  setTemplateCategory: (cat: string | null) => void;
+  zoomToFit: (containerWidth?: number, containerHeight?: number) => void;
   // Multi-page
   pages: Page[];
   currentPageIndex: number;
@@ -79,6 +82,17 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
   const [clipboard, setClipboard] = useState<CanvasElement | null>(null);
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [templateCategory, setTemplateCategory] = useState<string | null>(null);
+
+  const zoomToFit = useCallback((containerWidth = 800, containerHeight = 600) => {
+    const pixelW = canvasWidth * 3;
+    const pixelH = canvasHeight * 3;
+    const padding = 80;
+    const scaleX = (containerWidth - padding) / (pixelW + 48); // +48 for rulers
+    const scaleY = (containerHeight - padding) / (pixelH + 48);
+    const fitZoom = Math.min(scaleX, scaleY, 1);
+    setZoomState(Math.max(0.1, Math.round(fitZoom * 100) / 100));
+  }, [canvasWidth, canvasHeight]);
 
   // Current page elements accessor
   const elements = pages[currentPageIndex]?.elements || [];
@@ -354,6 +368,7 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     <EditorContext.Provider value={{
       elements, selectedId, zoom, canvasWidth, canvasHeight, unit, projectName,
       history, historyIndex, selectedElement, snapEnabled, selectedIds, selectedElements,
+      templateCategory, setTemplateCategory, zoomToFit,
       pages, currentPageIndex, addPage, deletePage, duplicatePage, switchPage, reorderPages,
       addElement, addCustomElement, addImageElement, selectElement, updateElement, deleteElement,
       setZoom: setZoomState, setProjectName, setCanvasSize: (w, h) => { setCanvasWidth(w); setCanvasHeight(h); },

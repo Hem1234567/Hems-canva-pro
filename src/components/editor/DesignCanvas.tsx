@@ -345,12 +345,15 @@ interface ElementRendererProps {
 
 const CanvasElementRenderer = ({ element: el, isSelected, onSelect, onDragStart, onDragMove, onDragEnd, onTransformEnd, registerNode }: ElementRendererProps) => {
   const nodeRef = useRef<any>(null);
+  const groupRef = useRef<any>(null);
 
   useEffect(() => {
+    // Register the inner shape node for transforms, not the group
     registerNode(el.id, nodeRef.current);
   }, [el.id, registerNode]);
 
   const isLocked = el.locked || false;
+  const hasVariable = el.text?.includes('{{serial}}') || el.text?.includes('{{date}}') || el.text?.includes('{{prefix}}');
 
   const commonProps = {
     x: el.x,
@@ -367,64 +370,96 @@ const CanvasElementRenderer = ({ element: el, isSelected, onSelect, onDragStart,
     ref: nodeRef,
   };
 
-  switch (el.type) {
-    case 'text':
-      return (
-        <Text
-          {...commonProps}
-          text={el.text || 'Text'}
-          fontSize={el.fontSize || 18}
-          fontFamily={el.fontFamily || 'Inter'}
-          fontStyle={el.fontStyle || 'normal'}
-          fill={el.fill}
-          width={el.width}
-          letterSpacing={el.letterSpacing || 0}
-          align={el.align || 'left'}
-          textDecoration={el.textDecoration || ''}
-        />
-      );
-    case 'rect':
-      return (
-        <Rect
-          {...commonProps}
-          width={el.width}
-          height={el.height}
-          fill={el.fill}
-          stroke={el.stroke}
-          strokeWidth={el.strokeWidth}
-          cornerRadius={el.cornerRadius || 0}
-        />
-      );
-    case 'circle':
-      return (
-        <Circle
-          {...commonProps}
-          x={el.x + el.width / 2}
-          y={el.y + el.height / 2}
-          radius={el.width / 2}
-          fill={el.fill}
-          stroke={el.stroke}
-          strokeWidth={el.strokeWidth}
-        />
-      );
-    case 'line':
-      return (
-        <Line
-          {...commonProps}
-          points={[0, 0, el.width, 0]}
-          stroke={el.fill}
-          strokeWidth={el.strokeWidth || 2}
-        />
-      );
-    case 'barcode':
-      return <BarcodeRenderer element={el} commonProps={commonProps} />;
-    case 'qrcode':
-      return <QRCodeRenderer element={el} commonProps={commonProps} />;
-    case 'image':
-      return <ImageRenderer element={el} commonProps={commonProps} />;
-    default:
-      return null;
-  }
+  const renderElement = () => {
+    switch (el.type) {
+      case 'text':
+        return (
+          <Text
+            {...commonProps}
+            text={el.text || 'Text'}
+            fontSize={el.fontSize || 18}
+            fontFamily={el.fontFamily || 'Inter'}
+            fontStyle={el.fontStyle || 'normal'}
+            fill={el.fill}
+            width={el.width}
+            letterSpacing={el.letterSpacing || 0}
+            align={el.align || 'left'}
+            textDecoration={el.textDecoration || ''}
+          />
+        );
+      case 'rect':
+        return (
+          <Rect
+            {...commonProps}
+            width={el.width}
+            height={el.height}
+            fill={el.fill}
+            stroke={el.stroke}
+            strokeWidth={el.strokeWidth}
+            cornerRadius={el.cornerRadius || 0}
+          />
+        );
+      case 'circle':
+        return (
+          <Circle
+            {...commonProps}
+            x={el.x + el.width / 2}
+            y={el.y + el.height / 2}
+            radius={el.width / 2}
+            fill={el.fill}
+            stroke={el.stroke}
+            strokeWidth={el.strokeWidth}
+          />
+        );
+      case 'line':
+        return (
+          <Line
+            {...commonProps}
+            points={[0, 0, el.width, 0]}
+            stroke={el.fill}
+            strokeWidth={el.strokeWidth || 2}
+          />
+        );
+      case 'barcode':
+        return <BarcodeRenderer element={el} commonProps={commonProps} />;
+      case 'qrcode':
+        return <QRCodeRenderer element={el} commonProps={commonProps} />;
+      case 'image':
+        return <ImageRenderer element={el} commonProps={commonProps} />;
+      default:
+        return null;
+    }
+  };
+
+  // Variable badge dimensions
+  const badgeW = 52;
+  const badgeH = 16;
+
+  return (
+    <>
+      {renderElement()}
+      {hasVariable && (
+        <Group x={el.x} y={el.y - badgeH - 4} listening={false} rotation={el.rotation}>
+          <Rect
+            width={badgeW}
+            height={badgeH}
+            fill="#D4AF37"
+            cornerRadius={3}
+            opacity={0.9}
+          />
+          <Text
+            x={4}
+            y={2}
+            text="{{serial}}"
+            fontSize={9}
+            fontFamily="monospace"
+            fill="#FFFFFF"
+            listening={false}
+          />
+        </Group>
+      )}
+    </>
+  );
 };
 
 export default DesignCanvas;

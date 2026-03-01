@@ -1,10 +1,11 @@
-import { Undo2, Redo2, ZoomIn, ZoomOut, Eye, ArrowLeft, Magnet, Sparkles } from 'lucide-react';
+import { Undo2, Redo2, ZoomIn, ZoomOut, Eye, ArrowLeft, Magnet, Sparkles, Presentation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useEditor } from '@/contexts/EditorContext';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import ExportDialog from './ExportDialog';
 import PreviewDialog from './PreviewDialog';
+import PresentationMode from './PresentationMode';
 import Konva from 'konva';
 
 interface EditorNavbarProps {
@@ -15,6 +16,7 @@ const EditorNavbar = ({ stageRef }: EditorNavbarProps) => {
   const { projectName, setProjectName, undo, redo, zoom, setZoom, snapEnabled, setSnapEnabled } = useEditor();
   const [editing, setEditing] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [presentOpen, setPresentOpen] = useState(false);
 
   return (
     <header className="h-12 sm:h-16 border-b border-border bg-card flex items-center px-2 sm:px-4 gap-1.5 sm:gap-3 shrink-0">
@@ -83,10 +85,15 @@ const EditorNavbar = ({ stageRef }: EditorNavbarProps) => {
           <Eye className="w-4 h-4" />
           <span className="hidden sm:inline text-xs">Preview</span>
         </Button>
+        <Button variant="ghost" size="sm" className="gap-1 h-8 px-2 sm:px-3" onClick={() => setPresentOpen(true)} title="Present (F5)">
+          <Presentation className="w-4 h-4" />
+          <span className="hidden sm:inline text-xs">Present</span>
+        </Button>
         <ExportDialog stageRef={stageRef} />
       </div>
 
       <PreviewDialog open={previewOpen} onOpenChange={setPreviewOpen} />
+      <PresentationMode open={presentOpen} onClose={() => setPresentOpen(false)} />
     </header>
   );
 };

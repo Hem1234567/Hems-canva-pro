@@ -51,6 +51,7 @@ interface EditorContextType {
   updateSelectedElements: (updates: Partial<CanvasElement>) => void;
   alignElements: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
   distributeElements: (direction: 'horizontal' | 'vertical') => void;
+  reorderPages: (fromIndex: number, toIndex: number) => void;
 }
 
 const EditorContext = createContext<EditorContextType | null>(null);
@@ -130,6 +131,17 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     setSelectedId(null);
     setSelectedIds(new Set());
   }, [pages.length]);
+
+  const reorderPages = useCallback((fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return;
+    setPages(prev => {
+      const newPages = [...prev];
+      const [moved] = newPages.splice(fromIndex, 1);
+      newPages.splice(toIndex, 0, moved);
+      return newPages;
+    });
+    setCurrentPageIndex(toIndex);
+  }, []);
 
   const addElement = useCallback((type: ElementType) => {
     const el = createDefaultElement(type, 50 + Math.random() * 100, 50 + Math.random() * 100);
@@ -324,7 +336,7 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     <EditorContext.Provider value={{
       elements, selectedId, zoom, canvasWidth, canvasHeight, unit, projectName,
       history, historyIndex, selectedElement, snapEnabled, selectedIds, selectedElements,
-      pages, currentPageIndex, addPage, deletePage, duplicatePage, switchPage,
+      pages, currentPageIndex, addPage, deletePage, duplicatePage, switchPage, reorderPages,
       addElement, addImageElement, selectElement, updateElement, deleteElement,
       setZoom: setZoomState, setProjectName, setCanvasSize: (w, h) => { setCanvasWidth(w); setCanvasHeight(h); },
       undo, redo, duplicateElement, moveLayer, loadElements,

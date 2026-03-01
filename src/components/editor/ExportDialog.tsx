@@ -140,15 +140,25 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
             const canvas = document.createElement('canvas');
             JsBarcode(canvas, barcodeValue, {
               format: el.barcodeFormat || 'CODE128',
-              width: 2, height: 60, displayValue: false,
-              background: 'transparent', lineColor: el.fill,
+              width: 2, height: Math.max(30, el.height - 20), displayValue: false,
+              margin: 2, background: '#FFFFFF', lineColor: el.fill || '#000000',
             });
             const img = new window.Image();
             img.src = canvas.toDataURL();
             await new Promise<void>(resolve => { img.onload = () => resolve(); });
             layer.add(new Konva.Image({
-              x: el.x, y: el.y, width: el.width, height: el.height,
+              x: el.x, y: el.y, width: el.width, height: el.height - 14,
               image: img, rotation: el.rotation, opacity: el.opacity,
+            }));
+            // Add serial number text below the barcode
+            layer.add(new Konva.Text({
+              x: el.x + 4, y: el.y + el.height - 13,
+              text: barcodeValue,
+              fontSize: 9,
+              fontFamily: 'monospace',
+              fill: el.fill || '#000000',
+              rotation: el.rotation,
+              opacity: el.opacity,
             }));
           } catch (err) { /* skip invalid barcodes */ }
           break;

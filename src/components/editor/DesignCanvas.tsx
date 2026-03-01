@@ -368,7 +368,7 @@ const CanvasElementRenderer = ({ element: el, isSelected, onSelect, onDragStart,
   }, [el.id, registerNode]);
 
   const isLocked = el.locked || false;
-  const hasVariable = el.text && /\{\{(serial|date|prefix|batch|name|designation|empId|department)\}\}/.test(el.text);
+  const hasVariable = el.text && /\{\{(serial|date|prefix|prefixOnly|batch|name|designation|empId|department)\}\}/.test(el.text);
 
   const commonProps = {
     x: el.x,

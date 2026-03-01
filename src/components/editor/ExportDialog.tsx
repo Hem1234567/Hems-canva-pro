@@ -132,7 +132,7 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
         .replace(/\{\{serial\}\}/g, serial)
         .replace(/\{\{date\}\}/g, new Date().toISOString().split('T')[0])
         .replace(/\{\{batch\}\}/g, 'BATCH-001')
-        .replace(/\{\{prefix\}\}/g, serialPrefix)
+        .replace(/\{\{prefix\}\}/g, serial || serialPrefix)
         .replace(/\{\{name\}\}/g, csvRow?.name || serial)
         .replace(/\{\{designation\}\}/g, csvRow?.designation || '')
         .replace(/\{\{empId\}\}/g, csvRow?.empid || serial)

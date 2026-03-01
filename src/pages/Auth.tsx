@@ -67,14 +67,14 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-lg bg-primary flex items-center justify-center mx-auto mb-4">
-            <span className="text-primary-foreground font-bold text-lg">LF</span>
+          <div className="w-12 h-12 rounded-xl brand-gradient flex items-center justify-center mx-auto mb-4">
+            <span className="text-white font-bold text-lg">✦</span>
           </div>
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             {mode === 'login' ? 'Welcome back' : 'Create account'}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {mode === 'login' ? 'Sign in to your account' : 'Get started with LabelForge'}
+            {mode === 'login' ? 'Sign in to DesignFlow' : 'Get started with DesignFlow'}
           </p>
         </div>
 

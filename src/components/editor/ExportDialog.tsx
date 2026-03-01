@@ -96,7 +96,11 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
       const text = rawText.replace(/\{\{serial\}\}/g, serial)
         .replace(/\{\{date\}\}/g, new Date().toISOString().split('T')[0])
         .replace(/\{\{batch\}\}/g, 'BATCH-001')
-        .replace(/\{\{prefix\}\}/g, serialPrefix);
+        .replace(/\{\{prefix\}\}/g, serialPrefix)
+        .replace(/\{\{name\}\}/g, serial)
+        .replace(/\{\{designation\}\}/g, '')
+        .replace(/\{\{empId\}\}/g, serial)
+        .replace(/\{\{department\}\}/g, '');
       // For barcode/qrcode: use replaced text, or fall back to raw serial
       const barcodeValue = text.length > 0 ? text : serial;
 

@@ -22,12 +22,15 @@ type TabId = typeof tabs[number]['id'];
 
 const LeftSidebar = () => {
   const [activeTab, setActiveTab] = useState<TabId>('text');
-  const { addElement, loadElements } = useEditor();
+  const { addElement, loadElements, setCanvasSize } = useEditor();
 
   const handleAdd = (type: ElementType) => addElement(type);
   const handleLoadTemplate = (templateId: string) => {
     const template = templates.find(t => t.id === templateId);
     if (template) {
+      if (template.canvasWidth && template.canvasHeight) {
+        setCanvasSize(template.canvasWidth, template.canvasHeight);
+      }
       loadElements(instantiateTemplate(template));
     }
   };
@@ -88,30 +91,68 @@ const LeftSidebar = () => {
         )}
 
         {activeTab === 'templates' && (
-          <div className="space-y-3">
-            {templates.map(t => (
-              <button
-                key={t.id}
-                onClick={() => handleLoadTemplate(t.id)}
-                className="w-full text-left border border-border rounded-lg p-3 hover:border-primary cursor-pointer transition-colors"
-              >
-                <div className="w-full h-20 bg-muted rounded mb-2 flex items-center justify-center text-muted-foreground text-xs">
-                  {t.name}
-                </div>
-                <p className="text-xs font-medium">{t.name}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{t.description}</p>
-              </button>
-            ))}
+          <div className="space-y-4">
+            <div>
+              <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Labels & Stickers</h4>
+              <div className="space-y-2">
+                {templates.filter(t => t.category === 'label').map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => handleLoadTemplate(t.id)}
+                    className="w-full text-left border border-border rounded-lg p-3 hover:border-primary cursor-pointer transition-colors"
+                  >
+                    <div className="w-full h-16 bg-muted rounded mb-2 flex items-center justify-center text-muted-foreground text-xs">
+                      {t.name}
+                    </div>
+                    <p className="text-xs font-medium">{t.name}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{t.description}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">ID Cards</h4>
+              <div className="space-y-2">
+                {templates.filter(t => t.category === 'id-card').map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => handleLoadTemplate(t.id)}
+                    className="w-full text-left border border-border rounded-lg p-3 hover:border-primary cursor-pointer transition-colors"
+                  >
+                    <div className="w-full h-16 bg-muted rounded mb-2 flex items-center justify-center text-muted-foreground text-xs">
+                      📇 {t.name}
+                    </div>
+                    <p className="text-xs font-medium">{t.name}</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{t.description}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 
         {activeTab === 'variables' && (
-          <div className="space-y-2">
-            {['{{serial}}', '{{date}}', '{{batch}}', '{{prefix}}'].map(v => (
-              <div key={v} className="border border-border rounded px-3 py-2 text-sm font-mono bg-card hover:border-primary cursor-pointer transition-colors">
-                {v}
+          <div className="space-y-3">
+            <div>
+              <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Label Variables</h4>
+              <div className="space-y-1.5">
+                {['{{serial}}', '{{date}}', '{{batch}}', '{{prefix}}'].map(v => (
+                  <div key={v} className="border border-border rounded px-3 py-2 text-sm font-mono bg-card hover:border-primary cursor-pointer transition-colors">
+                    {v}
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+            <div>
+              <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">ID Card Variables</h4>
+              <div className="space-y-1.5">
+                {['{{name}}', '{{designation}}', '{{empId}}', '{{department}}'].map(v => (
+                  <div key={v} className="border border-border rounded px-3 py-2 text-sm font-mono bg-card hover:border-primary cursor-pointer transition-colors">
+                    {v}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
 

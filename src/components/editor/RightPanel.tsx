@@ -10,6 +10,7 @@ import { CanvasElement } from '@/types/editor';
 import AlignmentTools from './AlignmentTools';
 import Minimap from './Minimap';
 import ImageFilters from './ImageFilters';
+import BackgroundRemover from './BackgroundRemover';
 
 const GOOGLE_FONTS = [
   'Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Oswald', 'Poppins',
@@ -235,6 +236,12 @@ const RightPanel = () => {
         {el.type === 'image' && (
           <Section title="Image Effects">
             <ImageFilters />
+          </Section>
+        )}
+
+        {el.type === 'image' && (
+          <Section title="AI Tools">
+            <BackgroundRemover />
           </Section>
         )}
 

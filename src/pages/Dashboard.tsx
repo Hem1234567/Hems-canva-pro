@@ -4,10 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Home, FolderOpen, LogOut, Trash2, Clock, Copy, Pencil, Check, X } from 'lucide-react';
+import { Plus, Home, FolderOpen, LogOut, Trash2, Clock, Copy, Pencil, Check, X, Menu } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Project {
   id: string;
@@ -27,6 +28,8 @@ const Dashboard = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('home');
+  const isMobile = useIsMobile();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate('/auth?mode=login', { replace: true });
@@ -102,8 +105,35 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
+      {/* Mobile top bar */}
+      <div className="fixed top-0 left-0 right-0 h-14 border-b border-border bg-card flex items-center px-4 gap-3 z-40 md:hidden">
+        <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)}>
+          <Menu className="w-5 h-5" />
+        </Button>
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center">
+            <span className="text-primary-foreground font-bold text-xs">LF</span>
+          </div>
+          <span className="font-semibold text-foreground text-sm">LabelForge</span>
+        </div>
+        <div className="flex-1" />
+        <Button onClick={createProject} size="sm" className="gap-1">
+          <Plus className="w-4 h-4" /> New
+        </Button>
+      </div>
+
+      {/* Sidebar overlay on mobile */}
+      {isMobile && sidebarOpen && (
+        <div className="fixed inset-0 bg-black/30 z-40" onClick={() => setSidebarOpen(false)} />
+      )}
+
       {/* Sidebar */}
-      <aside className="w-60 border-r border-border bg-card flex flex-col shrink-0">
+      <aside className={cn(
+        "w-60 border-r border-border bg-card flex flex-col shrink-0 transition-transform duration-200",
+        isMobile
+          ? `fixed left-0 top-0 bottom-0 z-50 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`
+          : "relative"
+      )}>
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-md bg-primary flex items-center justify-center">
@@ -114,9 +144,9 @@ const Dashboard = () => {
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
-          <SidebarBtn icon={Home} label="Home" active={activeTab === 'home'} onClick={() => setActiveTab('home')} />
-          <SidebarBtn icon={FolderOpen} label="All Projects" active={activeTab === 'projects'} onClick={() => setActiveTab('projects')} />
-          <Button onClick={createProject} className="w-full gap-2 mt-4">
+          <SidebarBtn icon={Home} label="Home" active={activeTab === 'home'} onClick={() => { setActiveTab('home'); setSidebarOpen(false); }} />
+          <SidebarBtn icon={FolderOpen} label="All Projects" active={activeTab === 'projects'} onClick={() => { setActiveTab('projects'); setSidebarOpen(false); }} />
+          <Button onClick={() => { createProject(); setSidebarOpen(false); }} className="w-full gap-2 mt-4">
             <Plus className="w-4 h-4" /> New Project
           </Button>
         </nav>
@@ -130,7 +160,7 @@ const Dashboard = () => {
       </aside>
 
       {/* Main */}
-      <main className="flex-1 p-8 overflow-y-auto">
+      <main className={cn("flex-1 p-4 sm:p-8 overflow-y-auto", isMobile && "pt-18")}>
         {activeTab === 'home' && (
           <>
             <div className="mb-8">
@@ -245,7 +275,7 @@ const ProjectCard = ({ project, onDelete, onDuplicate, onRename }: { project: Pr
 };
 
 const ProjectGrid = ({ projects, onDelete, onDuplicate, onRename }: { projects: Project[]; onDelete: (id: string) => void; onDuplicate: (p: Project) => void; onRename: (id: string, name: string) => void }) => (
-  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
     {projects.map(p => (
       <ProjectCard key={p.id} project={p} onDelete={onDelete} onDuplicate={onDuplicate} onRename={onRename} />
     ))}

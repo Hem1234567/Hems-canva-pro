@@ -46,7 +46,7 @@ const findSnap = (pos: number, size: number, lines: number[], threshold: number)
 const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
   const {
     elements, selectedId, selectElement, updateElement, zoom, canvasWidth, canvasHeight,
-    deleteElement, addImageElement, snapEnabled, selectedIds, toggleSelectElement, deleteSelected
+    deleteElement, addImageElement, addCustomElement, snapEnabled, selectedIds, toggleSelectElement, deleteSelected
   } = useEditor();
   const transformerRef = useRef<Konva.Transformer>(null);
   const stageRef = useRef<Konva.Stage>(null);
@@ -195,6 +195,21 @@ const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
   const handleFileDrop = useCallback(async (e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
+
+    // Check for stock element drag data first
+    const elementData = e.dataTransfer.getData('application/designflow-element');
+    if (elementData) {
+      try {
+        const parsed = JSON.parse(elementData);
+        addCustomElement(parsed);
+        toast.success('Element added to canvas');
+      } catch {
+        toast.error('Failed to add element');
+      }
+      return;
+    }
+
+    // Handle image file drops
     const file = e.dataTransfer.files?.[0];
     if (!file || !file.type.startsWith('image/') || !user) return;
 
@@ -206,7 +221,7 @@ const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
 
     addImageElement(publicUrl);
     toast.success('Image added to canvas');
-  }, [user, addImageElement]);
+  }, [user, addImageElement, addCustomElement]);
 
   // Ruler tick generation
   const rulerTicksH = [];

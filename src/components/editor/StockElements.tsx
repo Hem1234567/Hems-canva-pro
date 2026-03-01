@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useEditor } from '@/contexts/EditorContext';
 import { CanvasElement } from '@/types/editor';
 import {
@@ -6,9 +7,13 @@ import {
   Sun, Moon, Cloud, Droplets, Flame, Snowflake,
   Music, Camera, Phone, Mail, MapPin, Calendar,
   Check, X, AlertTriangle, Info, HelpCircle, Bell,
-  Home, Settings, User, Users, Lock, Unlock
+  Home, Settings, User, Users, Lock, Unlock,
+  Palette
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 
 interface StockShape {
   name: string;
@@ -143,23 +148,55 @@ const iconCategories = [
   },
 ];
 
+const quickColors = [
+  '#000000', '#ffffff', '#6366f1', '#ec4899', '#f59e0b',
+  '#22c55e', '#0ea5e9', '#e11d48', '#7c3aed', '#d4af37',
+  '#1e293b', '#f1f5f9', '#059669', '#f97316', '#64748b',
+];
+
 const StockElements = () => {
   const { addCustomElement } = useEditor();
+  const [customFill, setCustomFill] = useState('#6366f1');
+  const [customStroke, setCustomStroke] = useState('#000000');
 
-  const handleAddShape = (shape: StockShape) => {
-    addCustomElement(shape.element as any);
+  const handleAddShape = (shape: StockShape, overrideColor?: { fill?: string; stroke?: string }) => {
+    const el = { ...shape.element };
+    if (overrideColor?.fill) el.fill = overrideColor.fill;
+    if (overrideColor?.stroke) el.stroke = overrideColor.stroke;
+    addCustomElement(el as any);
     toast.success(`Added ${shape.name}`);
   };
 
+  const handleDragStart = (e: React.DragEvent, shape: StockShape) => {
+    e.dataTransfer.setData('application/designflow-element', JSON.stringify({
+      ...shape.element,
+      fill: customFill,
+    }));
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
+  const handleIconDragStart = (e: React.DragEvent, iconName: string) => {
+    e.dataTransfer.setData('application/designflow-element', JSON.stringify({
+      type: 'text',
+      text: iconName,
+      fontSize: 24,
+      fontFamily: 'Inter',
+      fontStyle: 'bold',
+      fill: customFill,
+      width: 120,
+      height: 40,
+    }));
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
   const handleAddIcon = (iconName: string) => {
-    // Add as a text element displaying the icon name as styled text
     addCustomElement({
       type: 'text',
       text: iconName,
       fontSize: 24,
       fontFamily: 'Inter',
       fontStyle: 'bold',
-      fill: '#6366f1',
+      fill: customFill,
       width: 120,
       height: 40,
     });
@@ -170,21 +207,82 @@ const StockElements = () => {
 
   return (
     <div className="space-y-4">
+      {/* Color Picker Section */}
+      <div className="border border-border rounded-lg p-2.5 bg-muted/30">
+        <div className="flex items-center gap-1.5 mb-2">
+          <Palette className="w-3.5 h-3.5 text-primary" />
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Custom Colors</span>
+        </div>
+        <div className="flex items-center gap-2 mb-1.5">
+          <div>
+            <Label className="text-[9px] text-muted-foreground">Fill</Label>
+            <div className="flex items-center gap-1 mt-0.5">
+              <input
+                type="color"
+                value={customFill}
+                onChange={e => setCustomFill(e.target.value)}
+                className="w-6 h-6 rounded border border-border cursor-pointer"
+              />
+              <span className="text-[9px] text-muted-foreground font-mono">{customFill}</span>
+            </div>
+          </div>
+          <div>
+            <Label className="text-[9px] text-muted-foreground">Stroke</Label>
+            <div className="flex items-center gap-1 mt-0.5">
+              <input
+                type="color"
+                value={customStroke}
+                onChange={e => setCustomStroke(e.target.value)}
+                className="w-6 h-6 rounded border border-border cursor-pointer"
+              />
+              <span className="text-[9px] text-muted-foreground font-mono">{customStroke}</span>
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-1">
+          {quickColors.map(c => (
+            <button
+              key={c}
+              onClick={() => setCustomFill(c)}
+              className="w-5 h-5 rounded-sm border border-border hover:scale-110 transition-transform"
+              style={{ backgroundColor: c }}
+              title={c}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Drag hint */}
+      <p className="text-[9px] text-muted-foreground bg-muted/50 rounded px-2 py-1">
+        💡 Drag elements onto the canvas, or click to add at center
+      </p>
+
       <div>
-        <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Preset Shapes</h4>
+        <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Preset Elements</h4>
         {shapeCategories.map(cat => (
           <div key={cat} className="mb-3">
             <p className="text-[10px] text-muted-foreground mb-1.5">{cat}</p>
             <div className="grid grid-cols-2 gap-1.5">
-              {stockShapes.filter(s => s.category === cat).map(shape => (
-                <button
-                  key={shape.name}
-                  onClick={() => handleAddShape(shape)}
-                  className="text-left border border-border rounded-md px-2.5 py-2 hover:border-primary hover:bg-muted/50 transition-all text-xs text-foreground"
-                >
-                  {shape.name}
-                </button>
-              ))}
+              {stockShapes.filter(s => s.category === cat).map(shape => {
+                const previewColor = shape.element.fill && shape.element.fill !== 'transparent'
+                  ? shape.element.fill
+                  : shape.element.stroke || '#6366f1';
+                return (
+                  <button
+                    key={shape.name}
+                    draggable
+                    onDragStart={e => handleDragStart(e, shape)}
+                    onClick={() => handleAddShape(shape, { fill: customFill, stroke: customStroke })}
+                    className="flex items-center gap-1.5 text-left border border-border rounded-md px-2 py-1.5 hover:border-primary hover:bg-muted/50 transition-all text-xs text-foreground cursor-grab active:cursor-grabbing"
+                  >
+                    <span
+                      className="w-3 h-3 rounded-sm shrink-0 border border-border"
+                      style={{ backgroundColor: previewColor }}
+                    />
+                    <span className="truncate">{shape.name}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         ))}
@@ -192,7 +290,7 @@ const StockElements = () => {
 
       <div>
         <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Icons</h4>
-        <p className="text-[10px] text-muted-foreground mb-3">Click to add as styled text element</p>
+        <p className="text-[10px] text-muted-foreground mb-3">Click or drag to add as styled text</p>
         {iconCategories.map(cat => (
           <div key={cat.name} className="mb-3">
             <p className="text-[10px] text-muted-foreground mb-1.5">{cat.name}</p>
@@ -200,8 +298,10 @@ const StockElements = () => {
               {cat.icons.map(({ name, Icon }) => (
                 <button
                   key={name}
+                  draggable
+                  onDragStart={e => handleIconDragStart(e, name)}
                   onClick={() => handleAddIcon(name)}
-                  className="flex flex-col items-center gap-0.5 p-2 rounded-md border border-border hover:border-primary hover:bg-muted/50 transition-all text-muted-foreground hover:text-primary"
+                  className="flex flex-col items-center gap-0.5 p-2 rounded-md border border-border hover:border-primary hover:bg-muted/50 transition-all text-muted-foreground hover:text-primary cursor-grab active:cursor-grabbing"
                   title={name}
                 >
                   <Icon className="w-4 h-4" />

@@ -47,7 +47,7 @@ const RightPanel = () => {
     };
 
     return (
-      <aside className="w-[300px] border-l border-border bg-card p-4 shrink-0 overflow-y-auto">
+      <aside className="w-[300px] border-l border-border bg-card p-4 shrink-0 overflow-y-auto h-full max-h-full">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Canvas Settings</h3>
         <div className="space-y-3">
           <div>
@@ -125,7 +125,7 @@ const RightPanel = () => {
   };
 
   return (
-    <aside className="w-[300px] border-l border-border bg-card p-4 shrink-0 overflow-y-auto">
+    <aside className="w-[300px] border-l border-border bg-card p-4 shrink-0 overflow-y-auto h-full max-h-full">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           {el.type.charAt(0).toUpperCase() + el.type.slice(1)} Properties

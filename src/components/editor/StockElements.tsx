@@ -13,21 +13,20 @@ import { toast } from 'sonner';
 interface StockShape {
   name: string;
   category: string;
-  element: Omit<CanvasElement, 'id'>;
+  element: Partial<CanvasElement> & { type: CanvasElement['type'] };
 }
 
 const stockShapes: StockShape[] = [
-  // Decorative shapes
-  { name: 'Rounded Card', category: 'Cards', element: { type: 'rect', x: 50, y: 50, width: 200, height: 120, rotation: 0, fill: '#f1f5f9', stroke: '#e2e8f0', strokeWidth: 1, opacity: 1, zIndex: 0, cornerRadius: 12 } },
-  { name: 'Accent Bar', category: 'Cards', element: { type: 'rect', x: 50, y: 50, width: 4, height: 60, rotation: 0, fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0, cornerRadius: 2 } },
-  { name: 'Pill Button', category: 'Cards', element: { type: 'rect', x: 50, y: 50, width: 160, height: 44, rotation: 0, fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0, cornerRadius: 22 } },
-  { name: 'Badge', category: 'Cards', element: { type: 'rect', x: 50, y: 50, width: 80, height: 28, rotation: 0, fill: '#dbeafe', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0, cornerRadius: 14 } },
-  { name: 'Divider', category: 'Lines', element: { type: 'line', x: 50, y: 50, width: 300, height: 1, rotation: 0, fill: '#e2e8f0', stroke: 'transparent', strokeWidth: 1, opacity: 1, zIndex: 0 } },
-  { name: 'Thick Divider', category: 'Lines', element: { type: 'line', x: 50, y: 50, width: 200, height: 4, rotation: 0, fill: '#6366f1', stroke: 'transparent', strokeWidth: 4, opacity: 1, zIndex: 0 } },
-  { name: 'Circle Dot', category: 'Shapes', element: { type: 'circle', x: 50, y: 50, width: 16, height: 16, rotation: 0, fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0 } },
-  { name: 'Large Circle', category: 'Shapes', element: { type: 'circle', x: 50, y: 50, width: 120, height: 120, rotation: 0, fill: '#f1f5f9', stroke: '#e2e8f0', strokeWidth: 1, opacity: 1, zIndex: 0 } },
-  { name: 'Square Frame', category: 'Shapes', element: { type: 'rect', x: 50, y: 50, width: 100, height: 100, rotation: 0, fill: 'transparent', stroke: '#000000', strokeWidth: 2, opacity: 1, zIndex: 0 } },
-  { name: 'Overlay', category: 'Shapes', element: { type: 'rect', x: 0, y: 0, width: 400, height: 300, rotation: 0, fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 0.5, zIndex: 0 } },
+  { name: 'Rounded Card', category: 'Cards', element: { type: 'rect', width: 200, height: 120, fill: '#f1f5f9', stroke: '#e2e8f0', strokeWidth: 1, opacity: 1, cornerRadius: 12 } },
+  { name: 'Accent Bar', category: 'Cards', element: { type: 'rect', width: 4, height: 60, fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, opacity: 1, cornerRadius: 2 } },
+  { name: 'Pill Button', category: 'Cards', element: { type: 'rect', width: 160, height: 44, fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, opacity: 1, cornerRadius: 22 } },
+  { name: 'Badge', category: 'Cards', element: { type: 'rect', width: 80, height: 28, fill: '#dbeafe', stroke: 'transparent', strokeWidth: 0, opacity: 1, cornerRadius: 14 } },
+  { name: 'Divider', category: 'Lines', element: { type: 'line', width: 300, height: 1, fill: '#e2e8f0', strokeWidth: 1, opacity: 1 } },
+  { name: 'Thick Divider', category: 'Lines', element: { type: 'line', width: 200, height: 4, fill: '#6366f1', strokeWidth: 4, opacity: 1 } },
+  { name: 'Circle Dot', category: 'Shapes', element: { type: 'circle', width: 16, height: 16, fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, opacity: 1 } },
+  { name: 'Large Circle', category: 'Shapes', element: { type: 'circle', width: 120, height: 120, fill: '#f1f5f9', stroke: '#e2e8f0', strokeWidth: 1, opacity: 1 } },
+  { name: 'Square Frame', category: 'Shapes', element: { type: 'rect', width: 100, height: 100, fill: 'transparent', stroke: '#000000', strokeWidth: 2, opacity: 1 } },
+  { name: 'Overlay', category: 'Shapes', element: { type: 'rect', width: 400, height: 300, fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 0.5 } },
 ];
 
 const iconCategories = [
@@ -95,24 +94,28 @@ const iconCategories = [
 ];
 
 const StockElements = () => {
-  const { addElement, updateElement } = useEditor();
+  const { addCustomElement } = useEditor();
 
   const handleAddShape = (shape: StockShape) => {
-    // We add a rect/circle/line with the shape's properties
-    const el = shape.element;
-    addElement(el.type as any);
-    // The addElement will create a default element, but we need to customize it
-    // So we use a workaround: add then immediately update the last element
+    addCustomElement(shape.element as any);
     toast.success(`Added ${shape.name}`);
   };
 
   const handleAddIcon = (iconName: string) => {
-    // Add as text element with the icon name as label
-    addElement('text');
-    toast.success(`Added ${iconName} text label`);
+    // Add as a text element displaying the icon name as styled text
+    addCustomElement({
+      type: 'text',
+      text: iconName,
+      fontSize: 24,
+      fontFamily: 'Inter',
+      fontStyle: 'bold',
+      fill: '#6366f1',
+      width: 120,
+      height: 40,
+    });
+    toast.success(`Added ${iconName}`);
   };
 
-  // Group shapes by category
   const shapeCategories = [...new Set(stockShapes.map(s => s.category))];
 
   return (
@@ -138,8 +141,8 @@ const StockElements = () => {
       </div>
 
       <div>
-        <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Icon Reference</h4>
-        <p className="text-[10px] text-muted-foreground mb-3">Click to add as text label</p>
+        <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Icons</h4>
+        <p className="text-[10px] text-muted-foreground mb-3">Click to add as styled text element</p>
         {iconCategories.map(cat => (
           <div key={cat.name} className="mb-3">
             <p className="text-[10px] text-muted-foreground mb-1.5">{cat.name}</p>

@@ -29,6 +29,7 @@ interface EditorContextType {
   switchPage: (index: number) => void;
   // Actions
   addElement: (type: ElementType) => void;
+  addCustomElement: (overrides: Partial<CanvasElement> & { type: ElementType }) => void;
   addImageElement: (src: string) => void;
   selectElement: (id: string | null) => void;
   updateElement: (id: string, updates: Partial<CanvasElement>) => void;
@@ -148,6 +149,18 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     const pixelW = canvasWidth * 3;
     const pixelH = canvasHeight * 3;
     const el = { ...defaults, x: (pixelW - defaults.width) / 2, y: (pixelH - defaults.height) / 2 };
+    const newElements = [...elements, el];
+    setElements(newElements);
+    setSelectedId(el.id);
+    pushHistory(newElements);
+  }, [elements, pushHistory, setElements, canvasWidth, canvasHeight]);
+
+  const addCustomElement = useCallback((overrides: Partial<CanvasElement> & { type: ElementType }) => {
+    const defaults = createDefaultElement(overrides.type, 0, 0);
+    const pixelW = canvasWidth * 3;
+    const pixelH = canvasHeight * 3;
+    const merged = { ...defaults, ...overrides, id: defaults.id };
+    const el = { ...merged, x: (pixelW - merged.width) / 2, y: (pixelH - merged.height) / 2 };
     const newElements = [...elements, el];
     setElements(newElements);
     setSelectedId(el.id);
@@ -342,7 +355,7 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
       elements, selectedId, zoom, canvasWidth, canvasHeight, unit, projectName,
       history, historyIndex, selectedElement, snapEnabled, selectedIds, selectedElements,
       pages, currentPageIndex, addPage, deletePage, duplicatePage, switchPage, reorderPages,
-      addElement, addImageElement, selectElement, updateElement, deleteElement,
+      addElement, addCustomElement, addImageElement, selectElement, updateElement, deleteElement,
       setZoom: setZoomState, setProjectName, setCanvasSize: (w, h) => { setCanvasWidth(w); setCanvasHeight(h); },
       undo, redo, duplicateElement, moveLayer, loadElements,
       copyElement, pasteElement, setSnapEnabled, reorderElements,

@@ -230,8 +230,10 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
   };
 
   const renderLabelImage = async (serial: string, csvRow?: Record<string, string>, skipVariableReplace = false): Promise<string> => {
-    const pixelW = canvasWidth * 3;
-    const pixelH = canvasHeight * 3;
+    // Use 1:1 canvas size matching the design, then export at high pixelRatio for quality
+    const pixelW = canvasWidth;
+    const pixelH = canvasHeight;
+    const exportPixelRatio = 4; // High resolution for crisp output
     const container = document.createElement('div');
     container.style.position = 'absolute';
     container.style.left = '-9999px';
@@ -300,7 +302,6 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
               x: el.x, y: el.y, width: el.width, height: el.height - 14,
               image: img, rotation: el.rotation, opacity: el.opacity,
             }));
-            // Add serial number text below the barcode
             layer.add(new Konva.Text({
               x: el.x + 4, y: el.y + el.height - 13,
               text: barcodeValue,
@@ -315,9 +316,13 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
         }
         case 'qrcode': {
           try {
+            // Generate QR at high resolution with proper quiet zone for scannability
+            const qrSize = Math.max(el.width, el.height) * exportPixelRatio;
             const qrDataUrl = await QRCode.toDataURL(barcodeValue, {
-              width: el.width, margin: 0,
-              color: { dark: el.fill, light: '#FFFFFF00' },
+              width: qrSize,
+              margin: 2, // Quiet zone required for reliable scanning
+              errorCorrectionLevel: 'H', // Highest error correction
+              color: { dark: el.fill || '#000000', light: '#FFFFFF' },
             });
             const img = new window.Image();
             img.src = qrDataUrl;
@@ -348,9 +353,8 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
     }
 
     layer.batchDraw();
-    // Wait a tick to ensure canvas is fully rendered before capture
     await new Promise(r => setTimeout(r, 50));
-    const dataUrl = offStage.toDataURL({ pixelRatio: 2 });
+    const dataUrl = offStage.toDataURL({ pixelRatio: exportPixelRatio });
     offStage.destroy();
     document.body.removeChild(container);
     return dataUrl;

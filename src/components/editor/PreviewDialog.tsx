@@ -35,8 +35,9 @@ const PreviewDialog = ({ open, onOpenChange }: PreviewDialogProps) => {
   }, [open, currentSerial, elements]);
 
   const renderPreview = async (serial: string) => {
-    const pixelW = canvasWidth * 3;
-    const pixelH = canvasHeight * 3;
+    const pixelW = canvasWidth;
+    const pixelH = canvasHeight;
+    const exportPixelRatio = 4;
     const container = document.createElement('div');
     container.style.position = 'absolute';
     container.style.left = '-9999px';
@@ -106,9 +107,11 @@ const PreviewDialog = ({ open, onOpenChange }: PreviewDialogProps) => {
           break;
         case 'qrcode':
           try {
+            const qrSize = Math.max(el.width, el.height) * exportPixelRatio;
             const qrUrl = await QRCode.toDataURL(barcodeValue, {
-              width: el.width, margin: 0,
-              color: { dark: el.fill, light: '#FFFFFF00' },
+              width: qrSize, margin: 2,
+              errorCorrectionLevel: 'H',
+              color: { dark: el.fill || '#000000', light: '#FFFFFF' },
             });
             const img = new window.Image();
             img.src = qrUrl;
@@ -137,7 +140,7 @@ const PreviewDialog = ({ open, onOpenChange }: PreviewDialogProps) => {
     }
 
     layer.draw();
-    const url = stage.toDataURL({ pixelRatio: 2 });
+    const url = stage.toDataURL({ pixelRatio: exportPixelRatio });
     setPreviewUrl(url);
     stage.destroy();
     document.body.removeChild(container);

@@ -117,32 +117,25 @@ const EditorInner = () => {
     <div className="h-screen flex flex-col bg-background overflow-hidden">
       <EditorNavbar stageRef={getStageRef()} />
 
-      {/* Mobile toggle bar */}
-      <div className="flex items-center gap-1 px-2 py-1 border-b border-border bg-card md:hidden">
-        <Button variant={leftOpen ? 'default' : 'ghost'} size="sm" className="gap-1 text-xs h-7" onClick={() => { setLeftOpen(!leftOpen); if (!leftOpen) setRightOpen(false); }}>
-          <PanelLeft className="w-3.5 h-3.5" /> Tools
-        </Button>
-        <Button variant={rightOpen ? 'default' : 'ghost'} size="sm" className="gap-1 text-xs h-7" onClick={() => { setRightOpen(!rightOpen); if (!rightOpen) setLeftOpen(false); }}>
-          <PanelRight className="w-3.5 h-3.5" /> Properties
-        </Button>
-      </div>
+      {/* Mobile toggle for properties only */}
+      {isMobile && (
+        <div className="flex items-center gap-1 px-2 py-1 border-b border-border bg-card">
+          <Button variant={rightOpen ? 'default' : 'ghost'} size="sm" className="gap-1 text-xs h-7" onClick={() => setRightOpen(!rightOpen)}>
+            <PanelRight className="w-3.5 h-3.5" /> Properties
+          </Button>
+        </div>
+      )}
 
       <div className="flex flex-1 overflow-hidden relative">
-        {/* Left Sidebar - overlay on mobile */}
-        {leftOpen && (
-          <>
-            {isMobile && <div className="absolute inset-0 bg-black/30 z-20" onClick={() => setLeftOpen(false)} />}
-            <div className={cn(
-              "z-30 h-full",
-              isMobile ? "absolute left-0 top-0 bottom-0 shadow-xl" : "relative"
-            )}>
-              <LeftSidebar />
-            </div>
-          </>
+        {/* Left Sidebar - desktop only (mobile uses bottom bar built into LeftSidebar) */}
+        {!isMobile && leftOpen && (
+          <div className="relative z-30 h-full">
+            <LeftSidebar />
+          </div>
         )}
 
         {/* Canvas area with page manager */}
-        <div className="flex flex-col flex-1 overflow-hidden">
+        <div className={cn("flex flex-col flex-1 overflow-hidden", isMobile && "pb-[56px]")}>
           <DesignCanvas ref={canvasRef} />
           <PageManager />
         </div>
@@ -182,6 +175,9 @@ const EditorInner = () => {
           </Button>
         )}
       </div>
+
+      {/* Mobile bottom bar tools */}
+      {isMobile && <LeftSidebar />}
     </div>
   );
 };

@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { CanvasElement } from '@/types/editor';
 import AlignmentTools from './AlignmentTools';
 import Minimap from './Minimap';
+import ImageFilters from './ImageFilters';
 
 const GOOGLE_FONTS = [
   'Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Oswald', 'Poppins',
@@ -228,6 +229,12 @@ const RightPanel = () => {
               <Label className="text-xs text-muted-foreground">URL</Label>
               <Input value={el.src || ''} onChange={e => update({ src: e.target.value })} className="mt-1 text-xs" placeholder="https://..." />
             </div>
+          </Section>
+        )}
+
+        {el.type === 'image' && (
+          <Section title="Image Effects">
+            <ImageFilters />
           </Section>
         )}
 

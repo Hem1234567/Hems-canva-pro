@@ -2,7 +2,7 @@ export interface DesignCategory {
   id: string;
   label: string;
   description: string;
-  icon: string;
+  iconName: string; // Lucide icon name
   defaultWidth: number;
   defaultHeight: number;
   presets: { label: string; width: number; height: number }[];
@@ -13,7 +13,7 @@ export const designCategories: DesignCategory[] = [
     id: 'presentation',
     label: 'Presentation',
     description: 'Slides & pitch decks',
-    icon: '📊',
+    iconName: 'Presentation',
     defaultWidth: 1920,
     defaultHeight: 1080,
     presets: [
@@ -25,7 +25,7 @@ export const designCategories: DesignCategory[] = [
     id: 'social-media',
     label: 'Social Media',
     description: 'Posts, stories & thumbnails',
-    icon: '📱',
+    iconName: 'Smartphone',
     defaultWidth: 1080,
     defaultHeight: 1080,
     presets: [
@@ -41,7 +41,7 @@ export const designCategories: DesignCategory[] = [
     id: 'poster',
     label: 'Poster & Flyer',
     description: 'Posters, flyers & brochures',
-    icon: '🖼️',
+    iconName: 'Image',
     defaultWidth: 595,
     defaultHeight: 842,
     presets: [
@@ -56,7 +56,7 @@ export const designCategories: DesignCategory[] = [
     id: 'business-card',
     label: 'Business Card',
     description: 'Cards & letterheads',
-    icon: '💼',
+    iconName: 'CreditCard',
     defaultWidth: 324,
     defaultHeight: 204,
     presets: [
@@ -71,7 +71,7 @@ export const designCategories: DesignCategory[] = [
     id: 'label',
     label: 'Labels & Stickers',
     description: 'Barcodes, QR codes & serials',
-    icon: '🏷️',
+    iconName: 'Tag',
     defaultWidth: 400,
     defaultHeight: 300,
     presets: [
@@ -84,7 +84,7 @@ export const designCategories: DesignCategory[] = [
     id: 'id-card',
     label: 'ID Cards',
     description: 'Employee, student & visitor',
-    icon: '📇',
+    iconName: 'BadgeCheck',
     defaultWidth: 324,
     defaultHeight: 204,
     presets: [
@@ -96,7 +96,7 @@ export const designCategories: DesignCategory[] = [
     id: 'web-banner',
     label: 'Web & Banner',
     description: 'Website banners & ads',
-    icon: '🌐',
+    iconName: 'Globe',
     defaultWidth: 1200,
     defaultHeight: 628,
     presets: [
@@ -110,7 +110,7 @@ export const designCategories: DesignCategory[] = [
     id: 'custom',
     label: 'Custom Size',
     description: 'Start with any dimensions',
-    icon: '✏️',
+    iconName: 'PenTool',
     defaultWidth: 800,
     defaultHeight: 600,
     presets: [],

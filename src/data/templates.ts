@@ -1,10 +1,12 @@
 import { CanvasElement } from '@/types/editor';
 
+export type TemplateCategory = 'label' | 'id-card' | 'presentation' | 'social-media' | 'poster' | 'business-card' | 'web-banner';
+
 export interface Template {
   id: string;
   name: string;
   description: string;
-  category: 'label' | 'id-card';
+  category: TemplateCategory;
   canvasWidth?: number;
   canvasHeight?: number;
   elements: Omit<CanvasElement, 'id'>[];
@@ -13,31 +15,17 @@ export interface Template {
 const genId = () => `el-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
 export const templates: Template[] = [
+  // ========== LABEL TEMPLATES ==========
   {
     id: 'product-label',
     name: 'Basic Product Label',
     description: 'Simple product label with name and barcode',
     category: 'label',
     elements: [
-      {
-        type: 'text', x: 40, y: 30, width: 300, height: 40, rotation: 0,
-        fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0,
-        text: 'Product Name', fontSize: 28, fontFamily: 'Inter', fontStyle: 'bold', align: 'left', letterSpacing: 0,
-      },
-      {
-        type: 'text', x: 40, y: 80, width: 250, height: 30, rotation: 0,
-        fill: '#444444', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1,
-        text: 'SKU: PRD-001', fontSize: 14, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0,
-      },
-      {
-        type: 'barcode', x: 40, y: 130, width: 200, height: 70, rotation: 0,
-        fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2,
-        text: '{{serial}}', barcodeFormat: 'CODE128',
-      },
-      {
-        type: 'line', x: 40, y: 115, width: 320, height: 2, rotation: 0,
-        fill: '#CCCCCC', stroke: 'transparent', strokeWidth: 1, opacity: 1, zIndex: 3,
-      },
+      { type: 'text', x: 40, y: 30, width: 300, height: 40, rotation: 0, fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0, text: 'Product Name', fontSize: 28, fontFamily: 'Inter', fontStyle: 'bold', align: 'left', letterSpacing: 0 },
+      { type: 'text', x: 40, y: 80, width: 250, height: 30, rotation: 0, fill: '#444444', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1, text: 'SKU: PRD-001', fontSize: 14, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'barcode', x: 40, y: 130, width: 200, height: 70, rotation: 0, fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: '{{serial}}', barcodeFormat: 'CODE128' },
+      { type: 'line', x: 40, y: 115, width: 320, height: 2, rotation: 0, fill: '#CCCCCC', stroke: 'transparent', strokeWidth: 1, opacity: 1, zIndex: 3 },
     ],
   },
   {
@@ -46,200 +34,100 @@ export const templates: Template[] = [
     description: 'Sticker with serial number, QR code, and date',
     category: 'label',
     elements: [
-      {
-        type: 'rect', x: 20, y: 20, width: 360, height: 260, rotation: 0,
-        fill: 'transparent', stroke: '#D4AF37', strokeWidth: 2, opacity: 1, zIndex: 0,
-      },
-      {
-        type: 'text', x: 40, y: 35, width: 200, height: 30, rotation: 0,
-        fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1,
-        text: 'SERIAL NO.', fontSize: 12, fontFamily: 'Inter', fontStyle: 'bold', align: 'left', letterSpacing: 2,
-      },
-      {
-        type: 'text', x: 40, y: 60, width: 280, height: 40, rotation: 0,
-        fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2,
-        text: '{{serial}}', fontSize: 24, fontFamily: 'Inter', fontStyle: 'bold', align: 'left', letterSpacing: 1,
-      },
-      {
-        type: 'qrcode', x: 270, y: 110, width: 90, height: 90, rotation: 0,
-        fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3,
-        text: '{{serial}}',
-      },
-      {
-        type: 'text', x: 40, y: 120, width: 200, height: 25, rotation: 0,
-        fill: '#666666', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 4,
-        text: 'Date: {{date}}', fontSize: 12, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0,
-      },
-      {
-        type: 'text', x: 40, y: 150, width: 200, height: 25, rotation: 0,
-        fill: '#666666', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 5,
-        text: 'Batch: {{batch}}', fontSize: 12, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0,
-      },
+      { type: 'rect', x: 20, y: 20, width: 360, height: 260, rotation: 0, fill: 'transparent', stroke: '#D4AF37', strokeWidth: 2, opacity: 1, zIndex: 0 },
+      { type: 'text', x: 40, y: 35, width: 200, height: 30, rotation: 0, fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1, text: 'SERIAL NO.', fontSize: 12, fontFamily: 'Inter', fontStyle: 'bold', align: 'left', letterSpacing: 2 },
+      { type: 'text', x: 40, y: 60, width: 280, height: 40, rotation: 0, fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: '{{serial}}', fontSize: 24, fontFamily: 'Inter', fontStyle: 'bold', align: 'left', letterSpacing: 1 },
+      { type: 'qrcode', x: 270, y: 110, width: 90, height: 90, rotation: 0, fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3, text: '{{serial}}' },
+      { type: 'text', x: 40, y: 120, width: 200, height: 25, rotation: 0, fill: '#666666', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 4, text: 'Date: {{date}}', fontSize: 12, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'text', x: 40, y: 150, width: 200, height: 25, rotation: 0, fill: '#666666', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 5, text: 'Batch: {{batch}}', fontSize: 12, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
     ],
   },
+  {
+    id: 'shipping-label',
+    name: 'Shipping Label',
+    description: 'Address label with barcode for packages',
+    category: 'label',
+    canvasWidth: 400,
+    canvasHeight: 300,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 400, height: 300, rotation: 0, fill: '#FFFFFF', stroke: '#000000', strokeWidth: 2, opacity: 1, zIndex: 0 },
+      { type: 'text', x: 20, y: 15, width: 360, height: 25, rotation: 0, fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1, text: 'FROM:', fontSize: 10, fontFamily: 'Inter', fontStyle: 'bold', align: 'left', letterSpacing: 1 },
+      { type: 'text', x: 20, y: 35, width: 360, height: 25, rotation: 0, fill: '#333333', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: 'Your Company, 123 Street', fontSize: 11, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'line', x: 10, y: 70, width: 380, height: 2, rotation: 0, fill: '#000000', stroke: 'transparent', strokeWidth: 2, opacity: 1, zIndex: 3 },
+      { type: 'text', x: 20, y: 80, width: 360, height: 25, rotation: 0, fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 4, text: 'TO:', fontSize: 10, fontFamily: 'Inter', fontStyle: 'bold', align: 'left', letterSpacing: 1 },
+      { type: 'text', x: 20, y: 100, width: 360, height: 40, rotation: 0, fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 5, text: '{{name}}', fontSize: 22, fontFamily: 'Inter', fontStyle: 'bold', align: 'left', letterSpacing: 0 },
+      { type: 'barcode', x: 20, y: 220, width: 250, height: 60, rotation: 0, fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 6, text: '{{serial}}', barcodeFormat: 'CODE128' },
+      { type: 'qrcode', x: 310, y: 210, width: 70, height: 70, rotation: 0, fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 7, text: '{{serial}}' },
+    ],
+  },
+  {
+    id: 'price-tag',
+    name: 'Price Tag',
+    description: 'Retail price tag with barcode',
+    category: 'label',
+    canvasWidth: 200,
+    canvasHeight: 150,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 200, height: 150, rotation: 0, fill: '#FFFFFF', stroke: '#e2e8f0', strokeWidth: 1, opacity: 1, zIndex: 0 },
+      { type: 'text', x: 10, y: 10, width: 180, height: 35, rotation: 0, fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1, text: '$29.99', fontSize: 32, fontFamily: 'Inter', fontStyle: 'bold', align: 'center', letterSpacing: 0 },
+      { type: 'text', x: 10, y: 48, width: 180, height: 20, rotation: 0, fill: '#666666', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: 'Product Name', fontSize: 12, fontFamily: 'Inter', fontStyle: 'normal', align: 'center', letterSpacing: 0 },
+      { type: 'barcode', x: 20, y: 80, width: 160, height: 50, rotation: 0, fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3, text: '{{serial}}', barcodeFormat: 'EAN13' },
+    ],
+  },
+  {
+    id: 'warning-label',
+    name: 'Warning Label',
+    description: 'Safety warning sticker',
+    category: 'label',
+    canvasWidth: 300,
+    canvasHeight: 200,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 300, height: 200, rotation: 0, fill: '#FEF3C7', stroke: '#F59E0B', strokeWidth: 3, opacity: 1, zIndex: 0 },
+      { type: 'text', x: 15, y: 15, width: 270, height: 35, rotation: 0, fill: '#B45309', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1, text: '⚠ WARNING', fontSize: 28, fontFamily: 'Inter', fontStyle: 'bold', align: 'center', letterSpacing: 2 },
+      { type: 'line', x: 15, y: 55, width: 270, height: 2, rotation: 0, fill: '#F59E0B', stroke: 'transparent', strokeWidth: 2, opacity: 1, zIndex: 2 },
+      { type: 'text', x: 15, y: 65, width: 270, height: 80, rotation: 0, fill: '#78350F', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3, text: 'Handle with care. Keep away from heat and moisture.', fontSize: 14, fontFamily: 'Inter', fontStyle: 'normal', align: 'center', letterSpacing: 0 },
+    ],
+  },
+
   // ========== ID CARD TEMPLATES ==========
   {
     id: 'employee-id-card',
     name: 'Employee ID Card',
-    description: 'Professional employee ID with photo, name, and designation',
+    description: 'Professional employee ID with photo and barcode',
     category: 'id-card',
-    canvasWidth: 324,  // CR80: 85.6mm × 54mm at ~3.78px/mm
+    canvasWidth: 324,
     canvasHeight: 204,
     elements: [
-      // Background
-      {
-        type: 'rect', x: 0, y: 0, width: 324, height: 204, rotation: 0,
-        fill: '#1a365d', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0,
-      },
-      // Header bar
-      {
-        type: 'rect', x: 0, y: 0, width: 324, height: 50, rotation: 0,
-        fill: '#2b6cb0', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1,
-      },
-      // Company name
-      {
-        type: 'text', x: 15, y: 10, width: 200, height: 30, rotation: 0,
-        fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2,
-        text: 'COMPANY NAME', fontSize: 16, fontFamily: 'Inter', fontStyle: 'bold', align: 'left', letterSpacing: 2,
-      },
-      // Logo placeholder
-      {
-        type: 'image', x: 260, y: 8, width: 35, height: 35, rotation: 0,
-        fill: 'transparent', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3,
-        src: '',
-      },
-      // Photo placeholder
-      {
-        type: 'rect', x: 15, y: 60, width: 75, height: 90, rotation: 0,
-        fill: '#e2e8f0', stroke: '#FFFFFF', strokeWidth: 2, opacity: 1, zIndex: 4,
-        cornerRadius: 4,
-      },
-      // Photo image slot
-      {
-        type: 'image', x: 15, y: 60, width: 75, height: 90, rotation: 0,
-        fill: 'transparent', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 5,
-        src: '',
-      },
-      // Employee Name
-      {
-        type: 'text', x: 105, y: 62, width: 200, height: 25, rotation: 0,
-        fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 6,
-        text: '{{name}}', fontSize: 18, fontFamily: 'Inter', fontStyle: 'bold', align: 'left', letterSpacing: 0,
-      },
-      // Designation
-      {
-        type: 'text', x: 105, y: 88, width: 200, height: 20, rotation: 0,
-        fill: '#bee3f8', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 7,
-        text: '{{designation}}', fontSize: 12, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0,
-      },
-      // Department
-      {
-        type: 'text', x: 105, y: 108, width: 200, height: 20, rotation: 0,
-        fill: '#90cdf4', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 8,
-        text: 'Dept: {{department}}', fontSize: 11, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0,
-      },
-      // Employee ID
-      {
-        type: 'text', x: 105, y: 128, width: 200, height: 20, rotation: 0,
-        fill: '#D4AF37', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 9,
-        text: 'ID: {{empId}}', fontSize: 12, fontFamily: 'Inter', fontStyle: 'bold', align: 'left', letterSpacing: 1,
-      },
-      // Barcode at bottom
-      {
-        type: 'barcode', x: 15, y: 160, width: 180, height: 35, rotation: 0,
-        fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 10,
-        text: '{{empId}}', barcodeFormat: 'CODE128',
-      },
-      // QR Code
-      {
-        type: 'qrcode', x: 260, y: 140, width: 50, height: 50, rotation: 0,
-        fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 11,
-        text: '{{empId}}',
-      },
+      { type: 'rect', x: 0, y: 0, width: 324, height: 204, rotation: 0, fill: '#1a365d', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0 },
+      { type: 'rect', x: 0, y: 0, width: 324, height: 50, rotation: 0, fill: '#2b6cb0', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1 },
+      { type: 'text', x: 15, y: 10, width: 200, height: 30, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: 'COMPANY NAME', fontSize: 16, fontFamily: 'Inter', fontStyle: 'bold', align: 'left', letterSpacing: 2 },
+      { type: 'rect', x: 15, y: 60, width: 75, height: 90, rotation: 0, fill: '#e2e8f0', stroke: '#FFFFFF', strokeWidth: 2, opacity: 1, zIndex: 4, cornerRadius: 4 },
+      { type: 'text', x: 105, y: 62, width: 200, height: 25, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 6, text: '{{name}}', fontSize: 18, fontFamily: 'Inter', fontStyle: 'bold', align: 'left', letterSpacing: 0 },
+      { type: 'text', x: 105, y: 88, width: 200, height: 20, rotation: 0, fill: '#bee3f8', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 7, text: '{{designation}}', fontSize: 12, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'text', x: 105, y: 108, width: 200, height: 20, rotation: 0, fill: '#90cdf4', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 8, text: 'Dept: {{department}}', fontSize: 11, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'text', x: 105, y: 128, width: 200, height: 20, rotation: 0, fill: '#D4AF37', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 9, text: 'ID: {{empId}}', fontSize: 12, fontFamily: 'Inter', fontStyle: 'bold', align: 'left', letterSpacing: 1 },
+      { type: 'barcode', x: 15, y: 160, width: 180, height: 35, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 10, text: '{{empId}}', barcodeFormat: 'CODE128' },
+      { type: 'qrcode', x: 260, y: 140, width: 50, height: 50, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 11, text: '{{empId}}' },
     ],
   },
   {
     id: 'student-id-card',
     name: 'Student ID Card',
-    description: 'Student identity card with photo and academic details',
+    description: 'Student identity card with academic details',
     category: 'id-card',
     canvasWidth: 324,
     canvasHeight: 204,
     elements: [
-      // Background
-      {
-        type: 'rect', x: 0, y: 0, width: 324, height: 204, rotation: 0,
-        fill: '#FFFFFF', stroke: '#2d3748', strokeWidth: 2, opacity: 1, zIndex: 0,
-      },
-      // Top accent stripe
-      {
-        type: 'rect', x: 0, y: 0, width: 324, height: 8, rotation: 0,
-        fill: '#e53e3e', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1,
-      },
-      // Institution name
-      {
-        type: 'text', x: 15, y: 15, width: 294, height: 25, rotation: 0,
-        fill: '#1a202c', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2,
-        text: 'INSTITUTION NAME', fontSize: 16, fontFamily: 'Inter', fontStyle: 'bold', align: 'center', letterSpacing: 2,
-      },
-      // "STUDENT ID" subtitle
-      {
-        type: 'text', x: 15, y: 38, width: 294, height: 18, rotation: 0,
-        fill: '#e53e3e', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3,
-        text: 'STUDENT IDENTITY CARD', fontSize: 10, fontFamily: 'Inter', fontStyle: 'bold', align: 'center', letterSpacing: 3,
-      },
-      // Divider
-      {
-        type: 'line', x: 15, y: 55, width: 294, height: 2, rotation: 0,
-        fill: '#e2e8f0', stroke: 'transparent', strokeWidth: 1, opacity: 1, zIndex: 4,
-      },
-      // Photo placeholder
-      {
-        type: 'rect', x: 15, y: 65, width: 70, height: 85, rotation: 0,
-        fill: '#f7fafc', stroke: '#cbd5e0', strokeWidth: 1, opacity: 1, zIndex: 5,
-        cornerRadius: 4,
-      },
-      {
-        type: 'image', x: 15, y: 65, width: 70, height: 85, rotation: 0,
-        fill: 'transparent', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 6,
-        src: '',
-      },
-      // Student Name
-      {
-        type: 'text', x: 100, y: 65, width: 210, height: 22, rotation: 0,
-        fill: '#1a202c', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 7,
-        text: '{{name}}', fontSize: 16, fontFamily: 'Inter', fontStyle: 'bold', align: 'left', letterSpacing: 0,
-      },
-      // Roll / Student ID
-      {
-        type: 'text', x: 100, y: 90, width: 210, height: 18, rotation: 0,
-        fill: '#4a5568', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 8,
-        text: 'Roll No: {{empId}}', fontSize: 11, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0,
-      },
-      // Department
-      {
-        type: 'text', x: 100, y: 110, width: 210, height: 18, rotation: 0,
-        fill: '#4a5568', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 9,
-        text: 'Dept: {{department}}', fontSize: 11, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0,
-      },
-      // Validity
-      {
-        type: 'text', x: 100, y: 130, width: 210, height: 18, rotation: 0,
-        fill: '#718096', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 10,
-        text: 'Valid: {{date}}', fontSize: 10, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0,
-      },
-      // Barcode
-      {
-        type: 'barcode', x: 15, y: 160, width: 170, height: 35, rotation: 0,
-        fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 11,
-        text: '{{empId}}', barcodeFormat: 'CODE128',
-      },
-      // QR
-      {
-        type: 'qrcode', x: 260, y: 148, width: 48, height: 48, rotation: 0,
-        fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 12,
-        text: '{{empId}}',
-      },
+      { type: 'rect', x: 0, y: 0, width: 324, height: 204, rotation: 0, fill: '#FFFFFF', stroke: '#2d3748', strokeWidth: 2, opacity: 1, zIndex: 0 },
+      { type: 'rect', x: 0, y: 0, width: 324, height: 8, rotation: 0, fill: '#e53e3e', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1 },
+      { type: 'text', x: 15, y: 15, width: 294, height: 25, rotation: 0, fill: '#1a202c', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: 'INSTITUTION NAME', fontSize: 16, fontFamily: 'Inter', fontStyle: 'bold', align: 'center', letterSpacing: 2 },
+      { type: 'text', x: 15, y: 38, width: 294, height: 18, rotation: 0, fill: '#e53e3e', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3, text: 'STUDENT IDENTITY CARD', fontSize: 10, fontFamily: 'Inter', fontStyle: 'bold', align: 'center', letterSpacing: 3 },
+      { type: 'rect', x: 15, y: 65, width: 70, height: 85, rotation: 0, fill: '#f7fafc', stroke: '#cbd5e0', strokeWidth: 1, opacity: 1, zIndex: 5, cornerRadius: 4 },
+      { type: 'text', x: 100, y: 65, width: 210, height: 22, rotation: 0, fill: '#1a202c', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 7, text: '{{name}}', fontSize: 16, fontFamily: 'Inter', fontStyle: 'bold', align: 'left', letterSpacing: 0 },
+      { type: 'text', x: 100, y: 90, width: 210, height: 18, rotation: 0, fill: '#4a5568', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 8, text: 'Roll No: {{empId}}', fontSize: 11, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'text', x: 100, y: 110, width: 210, height: 18, rotation: 0, fill: '#4a5568', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 9, text: 'Dept: {{department}}', fontSize: 11, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'barcode', x: 15, y: 160, width: 170, height: 35, rotation: 0, fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 11, text: '{{empId}}', barcodeFormat: 'CODE128' },
+      { type: 'qrcode', x: 260, y: 148, width: 48, height: 48, rotation: 0, fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 12, text: '{{empId}}' },
     ],
   },
   {
@@ -250,45 +138,328 @@ export const templates: Template[] = [
     canvasWidth: 324,
     canvasHeight: 204,
     elements: [
-      // Background
-      {
-        type: 'rect', x: 0, y: 0, width: 324, height: 204, rotation: 0,
-        fill: '#FFFFFF', stroke: '#D4AF37', strokeWidth: 3, opacity: 1, zIndex: 0,
-      },
-      // VISITOR banner
-      {
-        type: 'rect', x: 0, y: 0, width: 324, height: 45, rotation: 0,
-        fill: '#D4AF37', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1,
-      },
-      {
-        type: 'text', x: 15, y: 10, width: 294, height: 28, rotation: 0,
-        fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2,
-        text: 'VISITOR', fontSize: 22, fontFamily: 'Inter', fontStyle: 'bold', align: 'center', letterSpacing: 6,
-      },
-      // Name
-      {
-        type: 'text', x: 15, y: 58, width: 294, height: 25, rotation: 0,
-        fill: '#1a202c', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3,
-        text: '{{name}}', fontSize: 20, fontFamily: 'Inter', fontStyle: 'bold', align: 'center', letterSpacing: 0,
-      },
-      // Visiting
-      {
-        type: 'text', x: 15, y: 88, width: 294, height: 20, rotation: 0,
-        fill: '#4a5568', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 4,
-        text: 'Visiting: {{department}}', fontSize: 12, fontFamily: 'Inter', fontStyle: 'normal', align: 'center', letterSpacing: 0,
-      },
-      // Date
-      {
-        type: 'text', x: 15, y: 112, width: 294, height: 18, rotation: 0,
-        fill: '#718096', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 5,
-        text: 'Date: {{date}}', fontSize: 11, fontFamily: 'Inter', fontStyle: 'normal', align: 'center', letterSpacing: 0,
-      },
-      // Large QR Code
-      {
-        type: 'qrcode', x: 127, y: 135, width: 60, height: 60, rotation: 0,
-        fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 6,
-        text: '{{serial}}',
-      },
+      { type: 'rect', x: 0, y: 0, width: 324, height: 204, rotation: 0, fill: '#FFFFFF', stroke: '#D4AF37', strokeWidth: 3, opacity: 1, zIndex: 0 },
+      { type: 'rect', x: 0, y: 0, width: 324, height: 45, rotation: 0, fill: '#D4AF37', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1 },
+      { type: 'text', x: 15, y: 10, width: 294, height: 28, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: 'VISITOR', fontSize: 22, fontFamily: 'Inter', fontStyle: 'bold', align: 'center', letterSpacing: 6 },
+      { type: 'text', x: 15, y: 58, width: 294, height: 25, rotation: 0, fill: '#1a202c', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3, text: '{{name}}', fontSize: 20, fontFamily: 'Inter', fontStyle: 'bold', align: 'center', letterSpacing: 0 },
+      { type: 'text', x: 15, y: 88, width: 294, height: 20, rotation: 0, fill: '#4a5568', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 4, text: 'Visiting: {{department}}', fontSize: 12, fontFamily: 'Inter', fontStyle: 'normal', align: 'center', letterSpacing: 0 },
+      { type: 'qrcode', x: 127, y: 135, width: 60, height: 60, rotation: 0, fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 6, text: '{{serial}}' },
+    ],
+  },
+
+  // ========== PRESENTATION TEMPLATES ==========
+  {
+    id: 'ppt-title-slide',
+    name: 'Title Slide',
+    description: 'Clean presentation title slide',
+    category: 'presentation',
+    canvasWidth: 1920,
+    canvasHeight: 1080,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 1920, height: 1080, rotation: 0, fill: '#0f172a', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0 },
+      { type: 'rect', x: 0, y: 0, width: 8, height: 1080, rotation: 0, fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1 },
+      { type: 'text', x: 120, y: 350, width: 1400, height: 80, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: 'Your Presentation Title', fontSize: 72, fontFamily: 'Space Grotesk', fontStyle: 'bold', align: 'left', letterSpacing: -1 },
+      { type: 'text', x: 120, y: 460, width: 1000, height: 50, rotation: 0, fill: '#94a3b8', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3, text: 'Subtitle or brief description of your presentation', fontSize: 28, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'line', x: 120, y: 560, width: 200, height: 3, rotation: 0, fill: '#6366f1', stroke: 'transparent', strokeWidth: 3, opacity: 1, zIndex: 4 },
+      { type: 'text', x: 120, y: 590, width: 600, height: 30, rotation: 0, fill: '#64748b', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 5, text: 'Presented by Your Name  |  {{date}}', fontSize: 18, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+    ],
+  },
+  {
+    id: 'ppt-content-slide',
+    name: 'Content Slide',
+    description: 'Slide with title and content area',
+    category: 'presentation',
+    canvasWidth: 1920,
+    canvasHeight: 1080,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 1920, height: 1080, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0 },
+      { type: 'rect', x: 0, y: 0, width: 1920, height: 6, rotation: 0, fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1 },
+      { type: 'text', x: 100, y: 60, width: 1200, height: 60, rotation: 0, fill: '#0f172a', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: 'Slide Title', fontSize: 48, fontFamily: 'Space Grotesk', fontStyle: 'bold', align: 'left', letterSpacing: -1 },
+      { type: 'line', x: 100, y: 140, width: 150, height: 3, rotation: 0, fill: '#6366f1', stroke: 'transparent', strokeWidth: 3, opacity: 1, zIndex: 3 },
+      { type: 'text', x: 100, y: 180, width: 800, height: 40, rotation: 0, fill: '#334155', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 4, text: '• Key point one goes here', fontSize: 24, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'text', x: 100, y: 240, width: 800, height: 40, rotation: 0, fill: '#334155', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 5, text: '• Second important point', fontSize: 24, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'text', x: 100, y: 300, width: 800, height: 40, rotation: 0, fill: '#334155', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 6, text: '• Third point with detail', fontSize: 24, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'rect', x: 1050, y: 180, width: 750, height: 500, rotation: 0, fill: '#f1f5f9', stroke: '#e2e8f0', strokeWidth: 1, opacity: 1, zIndex: 7, cornerRadius: 12 },
+      { type: 'text', x: 1050, y: 400, width: 750, height: 30, rotation: 0, fill: '#94a3b8', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 8, text: 'Image or Chart Placeholder', fontSize: 18, fontFamily: 'Inter', fontStyle: 'normal', align: 'center', letterSpacing: 0 },
+    ],
+  },
+  {
+    id: 'ppt-stats-slide',
+    name: 'Statistics Slide',
+    description: 'Slide with key metrics',
+    category: 'presentation',
+    canvasWidth: 1920,
+    canvasHeight: 1080,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 1920, height: 1080, rotation: 0, fill: '#0f172a', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0 },
+      { type: 'text', x: 100, y: 80, width: 1200, height: 60, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1, text: 'Key Metrics', fontSize: 48, fontFamily: 'Space Grotesk', fontStyle: 'bold', align: 'left', letterSpacing: -1 },
+      { type: 'rect', x: 100, y: 250, width: 380, height: 300, rotation: 0, fill: '#1e293b', stroke: '#334155', strokeWidth: 1, opacity: 1, zIndex: 2, cornerRadius: 16 },
+      { type: 'text', x: 100, y: 310, width: 380, height: 70, rotation: 0, fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3, text: '98%', fontSize: 64, fontFamily: 'Space Grotesk', fontStyle: 'bold', align: 'center', letterSpacing: 0 },
+      { type: 'text', x: 100, y: 400, width: 380, height: 30, rotation: 0, fill: '#94a3b8', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 4, text: 'Customer Satisfaction', fontSize: 20, fontFamily: 'Inter', fontStyle: 'normal', align: 'center', letterSpacing: 0 },
+      { type: 'rect', x: 540, y: 250, width: 380, height: 300, rotation: 0, fill: '#1e293b', stroke: '#334155', strokeWidth: 1, opacity: 1, zIndex: 5, cornerRadius: 16 },
+      { type: 'text', x: 540, y: 310, width: 380, height: 70, rotation: 0, fill: '#22c55e', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 6, text: '2.5M', fontSize: 64, fontFamily: 'Space Grotesk', fontStyle: 'bold', align: 'center', letterSpacing: 0 },
+      { type: 'text', x: 540, y: 400, width: 380, height: 30, rotation: 0, fill: '#94a3b8', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 7, text: 'Active Users', fontSize: 20, fontFamily: 'Inter', fontStyle: 'normal', align: 'center', letterSpacing: 0 },
+      { type: 'rect', x: 980, y: 250, width: 380, height: 300, rotation: 0, fill: '#1e293b', stroke: '#334155', strokeWidth: 1, opacity: 1, zIndex: 8, cornerRadius: 16 },
+      { type: 'text', x: 980, y: 310, width: 380, height: 70, rotation: 0, fill: '#f59e0b', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 9, text: '$4.2B', fontSize: 64, fontFamily: 'Space Grotesk', fontStyle: 'bold', align: 'center', letterSpacing: 0 },
+      { type: 'text', x: 980, y: 400, width: 380, height: 30, rotation: 0, fill: '#94a3b8', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 10, text: 'Annual Revenue', fontSize: 20, fontFamily: 'Inter', fontStyle: 'normal', align: 'center', letterSpacing: 0 },
+    ],
+  },
+  {
+    id: 'ppt-thank-you',
+    name: 'Thank You Slide',
+    description: 'Closing slide with contact info',
+    category: 'presentation',
+    canvasWidth: 1920,
+    canvasHeight: 1080,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 1920, height: 1080, rotation: 0, fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0 },
+      { type: 'text', x: 200, y: 350, width: 1520, height: 100, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1, text: 'Thank You!', fontSize: 96, fontFamily: 'Space Grotesk', fontStyle: 'bold', align: 'center', letterSpacing: -2 },
+      { type: 'text', x: 200, y: 490, width: 1520, height: 40, rotation: 0, fill: '#c7d2fe', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: 'Questions? Reach out at hello@company.com', fontSize: 24, fontFamily: 'Inter', fontStyle: 'normal', align: 'center', letterSpacing: 0 },
+    ],
+  },
+
+  // ========== SOCIAL MEDIA TEMPLATES ==========
+  {
+    id: 'ig-post-minimal',
+    name: 'Instagram Post – Minimal',
+    description: 'Clean Instagram post with text overlay',
+    category: 'social-media',
+    canvasWidth: 1080,
+    canvasHeight: 1080,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 1080, height: 1080, rotation: 0, fill: '#fef3c7', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0 },
+      { type: 'text', x: 80, y: 350, width: 920, height: 80, rotation: 0, fill: '#78350f', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1, text: 'Your Quote Here', fontSize: 56, fontFamily: 'Playfair Display', fontStyle: 'bold', align: 'center', letterSpacing: -1 },
+      { type: 'line', x: 440, y: 470, width: 200, height: 3, rotation: 0, fill: '#d97706', stroke: 'transparent', strokeWidth: 3, opacity: 1, zIndex: 2 },
+      { type: 'text', x: 80, y: 510, width: 920, height: 30, rotation: 0, fill: '#92400e', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3, text: '@yourbrand', fontSize: 18, fontFamily: 'Inter', fontStyle: 'normal', align: 'center', letterSpacing: 2 },
+    ],
+  },
+  {
+    id: 'ig-post-bold',
+    name: 'Instagram Post – Bold',
+    description: 'Bold gradient Instagram post',
+    category: 'social-media',
+    canvasWidth: 1080,
+    canvasHeight: 1080,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 1080, height: 1080, rotation: 0, fill: '#7c3aed', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0 },
+      { type: 'rect', x: 0, y: 700, width: 1080, height: 380, rotation: 0, fill: '#4c1d95', stroke: 'transparent', strokeWidth: 0, opacity: 0.8, zIndex: 1 },
+      { type: 'text', x: 60, y: 750, width: 960, height: 70, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: 'BIG ANNOUNCEMENT', fontSize: 52, fontFamily: 'Space Grotesk', fontStyle: 'bold', align: 'left', letterSpacing: 2 },
+      { type: 'text', x: 60, y: 840, width: 960, height: 40, rotation: 0, fill: '#c4b5fd', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3, text: 'Details about your exciting news go here', fontSize: 22, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+    ],
+  },
+  {
+    id: 'ig-story',
+    name: 'Instagram Story',
+    description: 'Vertical story template',
+    category: 'social-media',
+    canvasWidth: 1080,
+    canvasHeight: 1920,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 1080, height: 1920, rotation: 0, fill: '#1e1b4b', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0 },
+      { type: 'text', x: 60, y: 200, width: 960, height: 60, rotation: 0, fill: '#e0e7ff', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1, text: 'NEW COLLECTION', fontSize: 18, fontFamily: 'Inter', fontStyle: 'bold', align: 'center', letterSpacing: 8 },
+      { type: 'text', x: 60, y: 750, width: 960, height: 120, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: 'Spring 2025', fontSize: 80, fontFamily: 'Playfair Display', fontStyle: 'bold', align: 'center', letterSpacing: -2 },
+      { type: 'text', x: 60, y: 1600, width: 960, height: 40, rotation: 0, fill: '#a5b4fc', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3, text: 'SWIPE UP TO SHOP', fontSize: 16, fontFamily: 'Inter', fontStyle: 'bold', align: 'center', letterSpacing: 6 },
+    ],
+  },
+  {
+    id: 'yt-thumbnail',
+    name: 'YouTube Thumbnail',
+    description: 'Eye-catching video thumbnail',
+    category: 'social-media',
+    canvasWidth: 1280,
+    canvasHeight: 720,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 1280, height: 720, rotation: 0, fill: '#dc2626', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0 },
+      { type: 'text', x: 60, y: 200, width: 700, height: 100, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1, text: 'CLICK BAIT TITLE', fontSize: 72, fontFamily: 'Space Grotesk', fontStyle: 'bold', align: 'left', letterSpacing: -1 },
+      { type: 'text', x: 60, y: 380, width: 500, height: 40, rotation: 0, fill: '#fecaca', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: 'You won\'t believe this!', fontSize: 28, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'rect', x: 850, y: 150, width: 370, height: 420, rotation: 0, fill: '#fef2f2', stroke: '#FFFFFF', strokeWidth: 4, opacity: 1, zIndex: 3, cornerRadius: 16 },
+      { type: 'text', x: 850, y: 330, width: 370, height: 30, rotation: 0, fill: '#991b1b', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 4, text: 'Image Here', fontSize: 18, fontFamily: 'Inter', fontStyle: 'normal', align: 'center', letterSpacing: 0 },
+    ],
+  },
+  {
+    id: 'fb-post',
+    name: 'Facebook Post',
+    description: 'Landscape post for Facebook',
+    category: 'social-media',
+    canvasWidth: 1200,
+    canvasHeight: 630,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 1200, height: 630, rotation: 0, fill: '#1e40af', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0 },
+      { type: 'text', x: 80, y: 200, width: 1040, height: 70, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1, text: 'Special Offer!', fontSize: 56, fontFamily: 'Space Grotesk', fontStyle: 'bold', align: 'center', letterSpacing: -1 },
+      { type: 'text', x: 80, y: 300, width: 1040, height: 40, rotation: 0, fill: '#bfdbfe', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: 'Up to 50% off on all products. Limited time only.', fontSize: 22, fontFamily: 'Inter', fontStyle: 'normal', align: 'center', letterSpacing: 0 },
+      { type: 'rect', x: 430, y: 400, width: 340, height: 60, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3, cornerRadius: 30 },
+      { type: 'text', x: 430, y: 415, width: 340, height: 30, rotation: 0, fill: '#1e40af', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 4, text: 'Shop Now →', fontSize: 20, fontFamily: 'Inter', fontStyle: 'bold', align: 'center', letterSpacing: 1 },
+    ],
+  },
+  {
+    id: 'linkedin-post',
+    name: 'LinkedIn Post',
+    description: 'Professional LinkedIn post',
+    category: 'social-media',
+    canvasWidth: 1200,
+    canvasHeight: 627,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 1200, height: 627, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0 },
+      { type: 'rect', x: 0, y: 0, width: 1200, height: 6, rotation: 0, fill: '#0077b5', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1 },
+      { type: 'text', x: 80, y: 100, width: 1040, height: 60, rotation: 0, fill: '#0f172a', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: '5 Lessons I Learned', fontSize: 48, fontFamily: 'Space Grotesk', fontStyle: 'bold', align: 'left', letterSpacing: -1 },
+      { type: 'text', x: 80, y: 180, width: 1040, height: 40, rotation: 0, fill: '#64748b', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3, text: 'From building a startup from scratch', fontSize: 24, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'line', x: 80, y: 250, width: 200, height: 3, rotation: 0, fill: '#0077b5', stroke: 'transparent', strokeWidth: 3, opacity: 1, zIndex: 4 },
+      { type: 'text', x: 80, y: 500, width: 400, height: 30, rotation: 0, fill: '#0077b5', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 5, text: '@YourName • Follow for more', fontSize: 16, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+    ],
+  },
+
+  // ========== POSTER & FLYER TEMPLATES ==========
+  {
+    id: 'event-poster',
+    name: 'Event Poster',
+    description: 'Modern event announcement poster',
+    category: 'poster',
+    canvasWidth: 595,
+    canvasHeight: 842,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 595, height: 842, rotation: 0, fill: '#0f172a', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0 },
+      { type: 'text', x: 40, y: 60, width: 515, height: 30, rotation: 0, fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1, text: 'PRESENTS', fontSize: 14, fontFamily: 'Inter', fontStyle: 'bold', align: 'left', letterSpacing: 6 },
+      { type: 'text', x: 40, y: 120, width: 515, height: 100, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: 'EVENT\nNAME', fontSize: 72, fontFamily: 'Space Grotesk', fontStyle: 'bold', align: 'left', letterSpacing: -2 },
+      { type: 'line', x: 40, y: 320, width: 100, height: 3, rotation: 0, fill: '#6366f1', stroke: 'transparent', strokeWidth: 3, opacity: 1, zIndex: 3 },
+      { type: 'text', x: 40, y: 350, width: 515, height: 40, rotation: 0, fill: '#94a3b8', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 4, text: 'March 15, 2025  •  7:00 PM', fontSize: 18, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 1 },
+      { type: 'text', x: 40, y: 400, width: 515, height: 30, rotation: 0, fill: '#64748b', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 5, text: 'Convention Center, Downtown', fontSize: 14, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'rect', x: 40, y: 700, width: 200, height: 50, rotation: 0, fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 6, cornerRadius: 8 },
+      { type: 'text', x: 40, y: 713, width: 200, height: 25, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 7, text: 'Get Tickets →', fontSize: 16, fontFamily: 'Inter', fontStyle: 'bold', align: 'center', letterSpacing: 1 },
+      { type: 'qrcode', x: 470, y: 710, width: 80, height: 80, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 8, text: 'https://event.com' },
+    ],
+  },
+  {
+    id: 'sale-flyer',
+    name: 'Sale Flyer',
+    description: 'Retail sale announcement flyer',
+    category: 'poster',
+    canvasWidth: 595,
+    canvasHeight: 842,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 595, height: 842, rotation: 0, fill: '#dc2626', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0 },
+      { type: 'text', x: 40, y: 100, width: 515, height: 120, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1, text: 'MEGA\nSALE', fontSize: 96, fontFamily: 'Space Grotesk', fontStyle: 'bold', align: 'center', letterSpacing: -2 },
+      { type: 'text', x: 100, y: 340, width: 395, height: 80, rotation: 0, fill: '#fef2f2', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: 'UP TO 70% OFF', fontSize: 48, fontFamily: 'Inter', fontStyle: 'bold', align: 'center', letterSpacing: 2 },
+      { type: 'rect', x: 150, y: 480, width: 295, height: 50, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3, cornerRadius: 25 },
+      { type: 'text', x: 150, y: 492, width: 295, height: 26, rotation: 0, fill: '#dc2626', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 4, text: 'SHOP NOW', fontSize: 20, fontFamily: 'Inter', fontStyle: 'bold', align: 'center', letterSpacing: 4 },
+      { type: 'text', x: 40, y: 750, width: 515, height: 25, rotation: 0, fill: '#fecaca', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 5, text: 'Valid until March 31, 2025. T&C apply.', fontSize: 12, fontFamily: 'Inter', fontStyle: 'normal', align: 'center', letterSpacing: 0 },
+    ],
+  },
+  {
+    id: 'minimalist-poster',
+    name: 'Minimalist Poster',
+    description: 'Clean typography-focused poster',
+    category: 'poster',
+    canvasWidth: 595,
+    canvasHeight: 842,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 595, height: 842, rotation: 0, fill: '#fafaf9', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0 },
+      { type: 'text', x: 60, y: 200, width: 475, height: 80, rotation: 0, fill: '#0c0a09', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1, text: 'Less is More', fontSize: 60, fontFamily: 'Playfair Display', fontStyle: 'bold', align: 'left', letterSpacing: -1 },
+      { type: 'line', x: 60, y: 310, width: 80, height: 2, rotation: 0, fill: '#0c0a09', stroke: 'transparent', strokeWidth: 2, opacity: 1, zIndex: 2 },
+      { type: 'text', x: 60, y: 340, width: 400, height: 60, rotation: 0, fill: '#57534e', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3, text: 'A showcase of modern minimalist design principles', fontSize: 16, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'text', x: 60, y: 760, width: 475, height: 20, rotation: 0, fill: '#a8a29e', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 4, text: '2025  ·  Design Exhibition  ·  Gallery One', fontSize: 11, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 2 },
+    ],
+  },
+
+  // ========== BUSINESS CARD TEMPLATES ==========
+  {
+    id: 'bcard-modern',
+    name: 'Modern Business Card',
+    description: 'Clean professional business card',
+    category: 'business-card',
+    canvasWidth: 324,
+    canvasHeight: 204,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 324, height: 204, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0 },
+      { type: 'rect', x: 0, y: 0, width: 6, height: 204, rotation: 0, fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1 },
+      { type: 'text', x: 25, y: 30, width: 280, height: 28, rotation: 0, fill: '#0f172a', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: '{{name}}', fontSize: 22, fontFamily: 'Space Grotesk', fontStyle: 'bold', align: 'left', letterSpacing: 0 },
+      { type: 'text', x: 25, y: 60, width: 280, height: 18, rotation: 0, fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3, text: '{{designation}}', fontSize: 12, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 1 },
+      { type: 'line', x: 25, y: 95, width: 60, height: 2, rotation: 0, fill: '#e2e8f0', stroke: 'transparent', strokeWidth: 2, opacity: 1, zIndex: 4 },
+      { type: 'text', x: 25, y: 115, width: 260, height: 15, rotation: 0, fill: '#64748b', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 5, text: 'hello@company.com', fontSize: 10, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'text', x: 25, y: 135, width: 260, height: 15, rotation: 0, fill: '#64748b', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 6, text: '+1 (555) 123-4567', fontSize: 10, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'text', x: 25, y: 155, width: 260, height: 15, rotation: 0, fill: '#64748b', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 7, text: 'www.company.com', fontSize: 10, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'qrcode', x: 254, y: 120, width: 55, height: 55, rotation: 0, fill: '#0f172a', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 8, text: 'https://company.com' },
+    ],
+  },
+  {
+    id: 'bcard-dark',
+    name: 'Dark Business Card',
+    description: 'Premium dark-themed card',
+    category: 'business-card',
+    canvasWidth: 324,
+    canvasHeight: 204,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 324, height: 204, rotation: 0, fill: '#0f172a', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0 },
+      { type: 'text', x: 25, y: 35, width: 280, height: 28, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1, text: '{{name}}', fontSize: 20, fontFamily: 'Space Grotesk', fontStyle: 'bold', align: 'left', letterSpacing: 0 },
+      { type: 'text', x: 25, y: 65, width: 280, height: 18, rotation: 0, fill: '#D4AF37', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: '{{designation}}', fontSize: 11, fontFamily: 'Inter', fontStyle: 'bold', align: 'left', letterSpacing: 2 },
+      { type: 'line', x: 25, y: 100, width: 274, height: 1, rotation: 0, fill: '#1e293b', stroke: 'transparent', strokeWidth: 1, opacity: 1, zIndex: 3 },
+      { type: 'text', x: 25, y: 120, width: 260, height: 14, rotation: 0, fill: '#94a3b8', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 4, text: 'hello@company.com', fontSize: 9, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'text', x: 25, y: 140, width: 260, height: 14, rotation: 0, fill: '#94a3b8', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 5, text: '+1 (555) 123-4567', fontSize: 9, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'text', x: 25, y: 160, width: 260, height: 14, rotation: 0, fill: '#94a3b8', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 6, text: 'www.company.com', fontSize: 9, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+    ],
+  },
+  {
+    id: 'bcard-creative',
+    name: 'Creative Business Card',
+    description: 'Colorful designer business card',
+    category: 'business-card',
+    canvasWidth: 324,
+    canvasHeight: 204,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 324, height: 204, rotation: 0, fill: '#7c3aed', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0 },
+      { type: 'circle', x: 240, y: -30, width: 160, height: 160, rotation: 0, fill: '#a78bfa', stroke: 'transparent', strokeWidth: 0, opacity: 0.3, zIndex: 1 },
+      { type: 'circle', x: -20, y: 140, width: 120, height: 120, rotation: 0, fill: '#c4b5fd', stroke: 'transparent', strokeWidth: 0, opacity: 0.2, zIndex: 2 },
+      { type: 'text', x: 25, y: 40, width: 280, height: 30, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3, text: '{{name}}', fontSize: 24, fontFamily: 'Space Grotesk', fontStyle: 'bold', align: 'left', letterSpacing: 0 },
+      { type: 'text', x: 25, y: 75, width: 280, height: 18, rotation: 0, fill: '#e9d5ff', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 4, text: 'Creative Designer', fontSize: 13, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 1 },
+      { type: 'text', x: 25, y: 140, width: 260, height: 14, rotation: 0, fill: '#ddd6fe', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 5, text: 'hello@creative.studio', fontSize: 10, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'text', x: 25, y: 162, width: 260, height: 14, rotation: 0, fill: '#ddd6fe', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 6, text: 'www.creative.studio', fontSize: 10, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+    ],
+  },
+
+  // ========== WEB BANNER TEMPLATES ==========
+  {
+    id: 'web-hero-banner',
+    name: 'Hero Banner',
+    description: 'Website hero section banner',
+    category: 'web-banner',
+    canvasWidth: 1200,
+    canvasHeight: 628,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 1200, height: 628, rotation: 0, fill: '#0f172a', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0 },
+      { type: 'text', x: 80, y: 160, width: 600, height: 80, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1, text: 'Build Something\nAmazing', fontSize: 52, fontFamily: 'Space Grotesk', fontStyle: 'bold', align: 'left', letterSpacing: -1 },
+      { type: 'text', x: 80, y: 330, width: 500, height: 40, rotation: 0, fill: '#94a3b8', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: 'The all-in-one platform for modern creators.', fontSize: 20, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'rect', x: 80, y: 410, width: 200, height: 50, rotation: 0, fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3, cornerRadius: 8 },
+      { type: 'text', x: 80, y: 422, width: 200, height: 26, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 4, text: 'Get Started →', fontSize: 16, fontFamily: 'Inter', fontStyle: 'bold', align: 'center', letterSpacing: 0 },
+      { type: 'rect', x: 750, y: 100, width: 370, height: 430, rotation: 0, fill: '#1e293b', stroke: '#334155', strokeWidth: 1, opacity: 1, zIndex: 5, cornerRadius: 16 },
+    ],
+  },
+  {
+    id: 'ad-leaderboard',
+    name: 'Leaderboard Ad',
+    description: '728×90 display advertisement',
+    category: 'web-banner',
+    canvasWidth: 728,
+    canvasHeight: 90,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 728, height: 90, rotation: 0, fill: '#1e40af', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0 },
+      { type: 'text', x: 20, y: 15, width: 400, height: 30, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1, text: 'Special Offer — 30% Off Today!', fontSize: 22, fontFamily: 'Space Grotesk', fontStyle: 'bold', align: 'left', letterSpacing: 0 },
+      { type: 'text', x: 20, y: 50, width: 400, height: 20, rotation: 0, fill: '#bfdbfe', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: 'Use code SAVE30 at checkout', fontSize: 13, fontFamily: 'Inter', fontStyle: 'normal', align: 'left', letterSpacing: 0 },
+      { type: 'rect', x: 580, y: 20, width: 130, height: 50, rotation: 0, fill: '#FFFFFF', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3, cornerRadius: 8 },
+      { type: 'text', x: 580, y: 33, width: 130, height: 24, rotation: 0, fill: '#1e40af', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 4, text: 'Shop Now', fontSize: 14, fontFamily: 'Inter', fontStyle: 'bold', align: 'center', letterSpacing: 0 },
+    ],
+  },
+  {
+    id: 'email-header',
+    name: 'Email Header',
+    description: 'Newsletter email header',
+    category: 'web-banner',
+    canvasWidth: 600,
+    canvasHeight: 200,
+    elements: [
+      { type: 'rect', x: 0, y: 0, width: 600, height: 200, rotation: 0, fill: '#f8fafc', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 0 },
+      { type: 'rect', x: 0, y: 0, width: 600, height: 4, rotation: 0, fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 1 },
+      { type: 'text', x: 30, y: 50, width: 540, height: 40, rotation: 0, fill: '#0f172a', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 2, text: 'Weekly Newsletter', fontSize: 32, fontFamily: 'Space Grotesk', fontStyle: 'bold', align: 'center', letterSpacing: -1 },
+      { type: 'text', x: 30, y: 110, width: 540, height: 25, rotation: 0, fill: '#64748b', stroke: 'transparent', strokeWidth: 0, opacity: 1, zIndex: 3, text: 'Your weekly dose of design inspiration', fontSize: 16, fontFamily: 'Inter', fontStyle: 'normal', align: 'center', letterSpacing: 0 },
+      { type: 'line', x: 250, y: 160, width: 100, height: 2, rotation: 0, fill: '#e2e8f0', stroke: 'transparent', strokeWidth: 2, opacity: 1, zIndex: 4 },
     ],
   },
 ];
@@ -297,5 +468,5 @@ export const instantiateTemplate = (template: Template): CanvasElement[] => {
   return template.elements.map((el, i) => ({
     ...el,
     id: `el-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 7)}`,
-  }));
+  })) as CanvasElement[];
 };

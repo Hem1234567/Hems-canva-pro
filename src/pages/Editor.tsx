@@ -11,6 +11,7 @@ import { CanvasElement } from '@/types/editor';
 import { toast } from 'sonner';
 import Konva from 'konva';
 import { PanelLeft, PanelRight, X } from 'lucide-react';
+import PageManager from '@/components/editor/PageManager';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -140,8 +141,11 @@ const EditorInner = () => {
           </>
         )}
 
-        {/* Canvas - always visible */}
-        <DesignCanvas ref={canvasRef} />
+        {/* Canvas area with page manager */}
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <DesignCanvas ref={canvasRef} />
+          <PageManager />
+        </div>
 
         {/* Right Panel - overlay on mobile */}
         {rightOpen && (

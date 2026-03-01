@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Type, BarChart3, QrCode, Square, Circle, Minus, Image, Upload, Variable, LayoutTemplate, Hash } from 'lucide-react';
+import { Type, BarChart3, QrCode, Square, Circle, Minus, Image, Hash, Variable, LayoutTemplate, Layers, Wand2 } from 'lucide-react';
 import { useEditor } from '@/contexts/EditorContext';
 import { ElementType } from '@/types/editor';
 import { cn } from '@/lib/utils';
-import { templates, instantiateTemplate } from '@/data/templates';
+import { templates, instantiateTemplate, TemplateCategory } from '@/data/templates';
 import SerialGenerator from './SerialGenerator';
 import ImageUploader from './ImageUploader';
+import StockElements from './StockElements';
 
 const tabs = [
   { id: 'templates', label: 'Templates', icon: LayoutTemplate },
@@ -13,6 +14,7 @@ const tabs = [
   { id: 'barcode', label: 'Barcode', icon: BarChart3 },
   { id: 'qrcode', label: 'QR Code', icon: QrCode },
   { id: 'shapes', label: 'Shapes', icon: Square },
+  { id: 'elements', label: 'Elements', icon: Layers },
   { id: 'images', label: 'Images', icon: Image },
   { id: 'serials', label: 'Serials', icon: Hash },
   { id: 'variables', label: 'Variables', icon: Variable },
@@ -20,8 +22,18 @@ const tabs = [
 
 type TabId = typeof tabs[number]['id'];
 
+const templateCategoryLabels: Record<string, string> = {
+  'label': 'Labels & Stickers',
+  'id-card': 'ID Cards',
+  'presentation': 'Presentations',
+  'social-media': 'Social Media',
+  'poster': 'Posters & Flyers',
+  'business-card': 'Business Cards',
+  'web-banner': 'Web & Banners',
+};
+
 const LeftSidebar = () => {
-  const [activeTab, setActiveTab] = useState<TabId>('text');
+  const [activeTab, setActiveTab] = useState<TabId>('templates');
   const { addElement, loadElements, setCanvasSize } = useEditor();
 
   const handleAdd = (type: ElementType) => addElement(type);
@@ -34,6 +46,13 @@ const LeftSidebar = () => {
       loadElements(instantiateTemplate(template));
     }
   };
+
+  // Group templates by category
+  const templatesByCategory = templates.reduce((acc, t) => {
+    if (!acc[t.category]) acc[t.category] = [];
+    acc[t.category].push(t);
+    return acc;
+  }, {} as Record<string, typeof templates>);
 
   return (
     <aside className="w-[280px] bg-surface border-r border-border flex shrink-0 h-full">
@@ -90,44 +109,32 @@ const LeftSidebar = () => {
           </div>
         )}
 
+        {activeTab === 'elements' && <StockElements />}
+
         {activeTab === 'templates' && (
           <div className="space-y-4">
-            <div>
-              <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Labels & Stickers</h4>
-              <div className="space-y-2">
-                {templates.filter(t => t.category === 'label').map(t => (
-                  <button
-                    key={t.id}
-                    onClick={() => handleLoadTemplate(t.id)}
-                    className="w-full text-left border border-border rounded-lg p-3 hover:border-primary cursor-pointer transition-colors"
-                  >
-                    <div className="w-full h-16 bg-muted rounded mb-2 flex items-center justify-center text-muted-foreground text-xs">
-                      {t.name}
-                    </div>
-                    <p className="text-xs font-medium">{t.name}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">{t.description}</p>
-                  </button>
-                ))}
+            {Object.entries(templatesByCategory).map(([cat, tmpls]) => (
+              <div key={cat}>
+                <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                  {templateCategoryLabels[cat] || cat}
+                </h4>
+                <div className="space-y-2">
+                  {tmpls.map(t => (
+                    <button
+                      key={t.id}
+                      onClick={() => handleLoadTemplate(t.id)}
+                      className="w-full text-left border border-border rounded-lg p-3 hover:border-primary cursor-pointer transition-colors"
+                    >
+                      <div className="w-full h-16 bg-muted rounded mb-2 flex items-center justify-center text-muted-foreground text-xs">
+                        {t.canvasWidth && t.canvasHeight ? `${t.canvasWidth}×${t.canvasHeight}` : t.name}
+                      </div>
+                      <p className="text-xs font-medium">{t.name}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{t.description}</p>
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-            <div>
-              <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">ID Cards</h4>
-              <div className="space-y-2">
-                {templates.filter(t => t.category === 'id-card').map(t => (
-                  <button
-                    key={t.id}
-                    onClick={() => handleLoadTemplate(t.id)}
-                    className="w-full text-left border border-border rounded-lg p-3 hover:border-primary cursor-pointer transition-colors"
-                  >
-                    <div className="w-full h-16 bg-muted rounded mb-2 flex items-center justify-center text-muted-foreground text-xs">
-                      📇 {t.name}
-                    </div>
-                    <p className="text-xs font-medium">{t.name}</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">{t.description}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
+            ))}
           </div>
         )}
 

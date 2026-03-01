@@ -1,7 +1,33 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { CanvasElement, EditorState, ElementType, createDefaultElement } from '@/types/editor';
 
-interface EditorContextType extends EditorState {
+export interface Page {
+  id: string;
+  elements: CanvasElement[];
+}
+
+interface EditorContextType {
+  elements: CanvasElement[];
+  selectedId: string | null;
+  zoom: number;
+  canvasWidth: number;
+  canvasHeight: number;
+  unit: 'mm' | 'inch' | 'px';
+  projectName: string;
+  history: CanvasElement[][];
+  historyIndex: number;
+  selectedElement: CanvasElement | null;
+  snapEnabled: boolean;
+  selectedIds: Set<string>;
+  selectedElements: CanvasElement[];
+  // Multi-page
+  pages: Page[];
+  currentPageIndex: number;
+  addPage: () => void;
+  deletePage: (index: number) => void;
+  duplicatePage: (index: number) => void;
+  switchPage: (index: number) => void;
+  // Actions
   addElement: (type: ElementType) => void;
   addImageElement: (src: string) => void;
   selectElement: (id: string | null) => void;
@@ -13,20 +39,15 @@ interface EditorContextType extends EditorState {
   undo: () => void;
   redo: () => void;
   duplicateElement: (id: string) => void;
-  selectedElement: CanvasElement | null;
   moveLayer: (id: string, direction: 'up' | 'down') => void;
   loadElements: (elements: CanvasElement[]) => void;
   copyElement: () => void;
   pasteElement: () => void;
-  snapEnabled: boolean;
   setSnapEnabled: (v: boolean) => void;
   reorderElements: (fromIndex: number, toIndex: number) => void;
-  // Multi-select
-  selectedIds: Set<string>;
   toggleSelectElement: (id: string) => void;
   selectAll: () => void;
   deleteSelected: () => void;
-  selectedElements: CanvasElement[];
   updateSelectedElements: (updates: Partial<CanvasElement>) => void;
   alignElements: (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
   distributeElements: (direction: 'horizontal' | 'vertical') => void;
@@ -40,19 +61,29 @@ export const useEditor = () => {
   return ctx;
 };
 
+const createPageId = () => `page-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
 export const EditorProvider = ({ children }: { children: ReactNode }) => {
-  const [elements, setElements] = useState<CanvasElement[]>([]);
+  const [pages, setPages] = useState<Page[]>([{ id: createPageId(), elements: [] }]);
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [zoom, setZoomState] = useState(1);
   const [canvasWidth, setCanvasWidth] = useState(400);
   const [canvasHeight, setCanvasHeight] = useState(300);
   const [unit] = useState<'mm' | 'inch' | 'px'>('mm');
-  const [projectName, setProjectName] = useState('Untitled Label');
+  const [projectName, setProjectName] = useState('Untitled Design');
   const [history, setHistory] = useState<CanvasElement[][]>([[]]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [clipboard, setClipboard] = useState<CanvasElement | null>(null);
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Current page elements accessor
+  const elements = pages[currentPageIndex]?.elements || [];
+  
+  const setElements = useCallback((newElements: CanvasElement[]) => {
+    setPages(prev => prev.map((p, i) => i === currentPageIndex ? { ...p, elements: newElements } : p));
+  }, [currentPageIndex]);
 
   const pushHistory = useCallback((newElements: CanvasElement[]) => {
     setHistory(prev => {
@@ -62,13 +93,51 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     setHistoryIndex(prev => prev + 1);
   }, [historyIndex]);
 
+  // Multi-page actions
+  const addPage = useCallback(() => {
+    const newPage: Page = { id: createPageId(), elements: [] };
+    setPages(prev => [...prev, newPage]);
+    setCurrentPageIndex(prev => prev + 1);
+    setSelectedId(null);
+    setSelectedIds(new Set());
+  }, []);
+
+  const deletePage = useCallback((index: number) => {
+    if (pages.length <= 1) return;
+    setPages(prev => prev.filter((_, i) => i !== index));
+    setCurrentPageIndex(prev => Math.min(prev, pages.length - 2));
+    setSelectedId(null);
+    setSelectedIds(new Set());
+  }, [pages.length]);
+
+  const duplicatePage = useCallback((index: number) => {
+    const source = pages[index];
+    if (!source) return;
+    const newPage: Page = {
+      id: createPageId(),
+      elements: source.elements.map(el => ({
+        ...el,
+        id: `el-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      })),
+    };
+    setPages(prev => [...prev.slice(0, index + 1), newPage, ...prev.slice(index + 1)]);
+    setCurrentPageIndex(index + 1);
+  }, [pages]);
+
+  const switchPage = useCallback((index: number) => {
+    if (index < 0 || index >= pages.length) return;
+    setCurrentPageIndex(index);
+    setSelectedId(null);
+    setSelectedIds(new Set());
+  }, [pages.length]);
+
   const addElement = useCallback((type: ElementType) => {
     const el = createDefaultElement(type, 50 + Math.random() * 100, 50 + Math.random() * 100);
     const newElements = [...elements, el];
     setElements(newElements);
     setSelectedId(el.id);
     pushHistory(newElements);
-  }, [elements, pushHistory]);
+  }, [elements, pushHistory, setElements]);
 
   const addImageElement = useCallback((src: string) => {
     const el = createDefaultElement('image', 50 + Math.random() * 100, 50 + Math.random() * 100);
@@ -77,7 +146,7 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     setElements(newElements);
     setSelectedId(el.id);
     pushHistory(newElements);
-  }, [elements, pushHistory]);
+  }, [elements, pushHistory, setElements]);
 
   const selectElement = useCallback((id: string | null) => {
     setSelectedId(id);
@@ -87,17 +156,9 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
   const toggleSelectElement = useCallback((id: string) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      // Update selectedId to last toggled or first in set
-      if (next.size > 0) {
-        setSelectedId(next.has(id) ? id : [...next][next.size - 1]);
-      } else {
-        setSelectedId(null);
-      }
+      if (next.has(id)) next.delete(id); else next.add(id);
+      if (next.size > 0) setSelectedId(next.has(id) ? id : [...next][next.size - 1]);
+      else setSelectedId(null);
       return next;
     });
   }, []);
@@ -114,12 +175,12 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     setSelectedId(null);
     setSelectedIds(new Set());
     pushHistory(newElements);
-  }, [elements, selectedIds, pushHistory]);
+  }, [elements, selectedIds, pushHistory, setElements]);
 
   const updateSelectedElements = useCallback((updates: Partial<CanvasElement>) => {
     const newElements = elements.map(el => selectedIds.has(el.id) ? { ...el, ...updates } : el);
     setElements(newElements);
-  }, [elements, selectedIds]);
+  }, [elements, selectedIds, setElements]);
 
   const alignElements = useCallback((alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
     const sel = elements.filter(el => selectedIds.has(el.id));
@@ -148,7 +209,7 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     }
     setElements(newElements);
     pushHistory(newElements);
-  }, [elements, selectedIds, pushHistory]);
+  }, [elements, selectedIds, pushHistory, setElements]);
 
   const distributeElements = useCallback((direction: 'horizontal' | 'vertical') => {
     const sel = elements.filter(el => selectedIds.has(el.id));
@@ -178,19 +239,19 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     }
     setElements(newElements);
     pushHistory(newElements);
-  }, [elements, selectedIds, pushHistory]);
+  }, [elements, selectedIds, pushHistory, setElements]);
 
   const updateElement = useCallback((id: string, updates: Partial<CanvasElement>) => {
     const newElements = elements.map(el => el.id === id ? { ...el, ...updates } : el);
     setElements(newElements);
-  }, [elements]);
+  }, [elements, setElements]);
 
   const deleteElement = useCallback((id: string) => {
     const newElements = elements.filter(el => el.id !== id);
     setElements(newElements);
     if (selectedId === id) setSelectedId(null);
     pushHistory(newElements);
-  }, [elements, selectedId, pushHistory]);
+  }, [elements, selectedId, pushHistory, setElements]);
 
   const duplicateElement = useCallback((id: string) => {
     const el = elements.find(e => e.id === id);
@@ -200,7 +261,7 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     setElements(newElements);
     setSelectedId(dup.id);
     pushHistory(newElements);
-  }, [elements, pushHistory]);
+  }, [elements, pushHistory, setElements]);
 
   const moveLayer = useCallback((id: string, direction: 'up' | 'down') => {
     const idx = elements.findIndex(e => e.id === id);
@@ -211,13 +272,13 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     [newArr[idx], newArr[swapIdx]] = [newArr[swapIdx], newArr[idx]];
     setElements(newArr);
     pushHistory(newArr);
-  }, [elements, pushHistory]);
+  }, [elements, pushHistory, setElements]);
 
   const loadElements = useCallback((newElements: CanvasElement[]) => {
     setElements(newElements);
     setSelectedId(null);
     pushHistory(newElements);
-  }, [pushHistory]);
+  }, [pushHistory, setElements]);
 
   const copyElement = useCallback(() => {
     const el = elements.find(e => e.id === selectedId);
@@ -231,7 +292,7 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     setElements(newElements);
     setSelectedId(dup.id);
     pushHistory(newElements);
-  }, [clipboard, elements, pushHistory]);
+  }, [clipboard, elements, pushHistory, setElements]);
 
   const reorderElements = useCallback((fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return;
@@ -240,21 +301,21 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     newArr.splice(toIndex, 0, moved);
     setElements(newArr);
     pushHistory(newArr);
-  }, [elements, pushHistory]);
+  }, [elements, pushHistory, setElements]);
 
   const undo = useCallback(() => {
     if (historyIndex <= 0) return;
     const newIdx = historyIndex - 1;
     setHistoryIndex(newIdx);
     setElements(history[newIdx]);
-  }, [history, historyIndex]);
+  }, [history, historyIndex, setElements]);
 
   const redo = useCallback(() => {
     if (historyIndex >= history.length - 1) return;
     const newIdx = historyIndex + 1;
     setHistoryIndex(newIdx);
     setElements(history[newIdx]);
-  }, [history, historyIndex]);
+  }, [history, historyIndex, setElements]);
 
   const selectedElement = elements.find(el => el.id === selectedId) || null;
   const selectedElements = elements.filter(el => selectedIds.has(el.id));
@@ -263,6 +324,7 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     <EditorContext.Provider value={{
       elements, selectedId, zoom, canvasWidth, canvasHeight, unit, projectName,
       history, historyIndex, selectedElement, snapEnabled, selectedIds, selectedElements,
+      pages, currentPageIndex, addPage, deletePage, duplicatePage, switchPage,
       addElement, addImageElement, selectElement, updateElement, deleteElement,
       setZoom: setZoomState, setProjectName, setCanvasSize: (w, h) => { setCanvasWidth(w); setCanvasHeight(h); },
       undo, redo, duplicateElement, moveLayer, loadElements,

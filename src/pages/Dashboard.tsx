@@ -4,13 +4,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Home, FolderOpen, LogOut, Trash2, Clock, Copy, Pencil, Check, X, Menu, Sparkles, Search } from 'lucide-react';
+import { Plus, Home, FolderOpen, LogOut, Trash2, Clock, Copy, Pencil, Check, X, Menu, Sparkles, Search, Presentation, Smartphone, Image, CreditCard, Tag, BadgeCheck, Globe, PenTool } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { designCategories, DesignCategory } from '@/data/designCategories';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { LucideIcon } from 'lucide-react';
+
+const iconMap: Record<string, LucideIcon> = {
+  Presentation, Smartphone, Image, CreditCard, Tag, BadgeCheck, Globe, PenTool,
+};
 
 interface Project {
   id: string;
@@ -205,7 +210,7 @@ const Dashboard = () => {
                   onClick={() => { setSelectedCategory(null); handleCategorySelect(cat); setCreateDialogOpen(true); }}
                   className="text-left border border-border rounded-xl p-4 sm:p-5 bg-card hover:border-primary/50 hover:shadow-md transition-all group"
                 >
-                  <span className="text-2xl sm:text-3xl mb-2 block">{cat.icon}</span>
+                  {(() => { const Icon = iconMap[cat.iconName]; return Icon ? <Icon className="w-7 h-7 sm:w-8 sm:h-8 mb-2 text-primary" /> : null; })()}
                   <h3 className="font-semibold text-foreground text-sm sm:text-base">{cat.label}</h3>
                   <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">{cat.description}</p>
                 </button>
@@ -214,7 +219,7 @@ const Dashboard = () => {
                 onClick={() => { setSelectedCategory(designCategories.find(c => c.id === 'custom')!); setCreateDialogOpen(true); }}
                 className="text-left border-2 border-dashed border-border rounded-xl p-4 sm:p-5 hover:border-primary/50 transition-all"
               >
-                <span className="text-2xl sm:text-3xl mb-2 block">✏️</span>
+                <PenTool className="w-7 h-7 sm:w-8 sm:h-8 mb-2 text-muted-foreground" />
                 <h3 className="font-semibold text-foreground text-sm sm:text-base">Custom Size</h3>
                 <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">Any dimensions</p>
               </button>
@@ -284,7 +289,7 @@ const Dashboard = () => {
                   onClick={() => handleCategorySelect(cat)}
                   className="text-left border border-border rounded-lg p-4 hover:border-primary/50 hover:bg-muted/50 transition-all"
                 >
-                  <span className="text-2xl mb-1.5 block">{cat.icon}</span>
+                  {(() => { const Icon = iconMap[cat.iconName]; return Icon ? <Icon className="w-6 h-6 mb-1.5 text-primary" /> : null; })()}
                   <h3 className="font-semibold text-sm">{cat.label}</h3>
                   <p className="text-[11px] text-muted-foreground mt-0.5">{cat.description}</p>
                 </button>

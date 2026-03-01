@@ -186,10 +186,12 @@ const EditorInner = () => {
   );
 };
 
-const Editor = () => (
-  <EditorProvider>
-    <EditorInner />
-  </EditorProvider>
-);
+const Editor = () => {
+  return (
+    <EditorProvider>
+      <EditorInner />
+    </EditorProvider>
+  );
+};
 
 export default Editor;

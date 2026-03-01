@@ -1,11 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Download, Loader2, Upload, Eye } from 'lucide-react';
+import { Download, Loader2, Upload, FileSpreadsheet, CheckCircle2 } from 'lucide-react';
 import { useEditor } from '@/contexts/EditorContext';
 import { jsPDF } from 'jspdf';
 import Konva from 'konva';
@@ -14,6 +14,7 @@ import JsBarcode from 'jsbarcode';
 import QRCode from 'qrcode';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
+import * as XLSX from 'xlsx';
 
 interface ExportDialogProps {
   stageRef: React.RefObject<Konva.Stage>;
@@ -58,47 +59,163 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
   const [csvSerials, setCsvSerials] = useState<string[]>([]);
   const [csvRows, setCsvRows] = useState<Record<string, string>[]>([]);
   const [exportMode, setExportMode] = useState<'single' | 'bulk'>('bulk');
+  const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
+  const [fileHeaders, setFileHeaders] = useState<string[]>([]);
+  const [uploadedFileName, setUploadedFileName] = useState('');
 
-  const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Auto-detect variables used in the design
+  const detectedVariables = useMemo(() => {
+    const vars = new Set<string>();
+    const regex = /\{\{(\w+)\}\}/g;
+    for (const el of elements) {
+      if (el.text) {
+        let match;
+        while ((match = regex.exec(el.text)) !== null) {
+          vars.add(match[1]);
+        }
+      }
+    }
+    return Array.from(vars);
+  }, [elements]);
+
+  // Auto-map file columns to detected variables
+  const autoMapColumns = (headers: string[], variables: string[]) => {
+    const mapping: Record<string, string> = {};
+    const normalizedHeaders = headers.map(h => h.toLowerCase().replace(/[^a-z0-9]/g, ''));
+    
+    for (const varName of variables) {
+      const normalizedVar = varName.toLowerCase().replace(/[^a-z0-9]/g, '');
+      // Exact match
+      let idx = normalizedHeaders.indexOf(normalizedVar);
+      if (idx === -1) {
+        // Partial match
+        idx = normalizedHeaders.findIndex(h => h.includes(normalizedVar) || normalizedVar.includes(h));
+      }
+      if (idx === -1) {
+        // Common aliases
+        const aliases: Record<string, string[]> = {
+          'serial': ['sn', 'serialno', 'serialnumber', 'slno', 'sr', 'srno'],
+          'name': ['fullname', 'employeename', 'empname', 'staffname'],
+          'empid': ['employeeid', 'empno', 'employeeno', 'id', 'staffid', 'badgeid'],
+          'designation': ['title', 'jobtitle', 'position', 'role'],
+          'department': ['dept', 'division', 'section', 'unit'],
+          'date': ['issuedate', 'startdate', 'joindate', 'doj'],
+          'batch': ['batchno', 'batchnumber', 'lot', 'lotno'],
+        };
+        const varAliases = aliases[normalizedVar] || [];
+        idx = normalizedHeaders.findIndex(h => varAliases.includes(h));
+      }
+      if (idx !== -1) {
+        mapping[varName] = headers[idx];
+      }
+    }
+    return mapping;
+  };
+
+  const parseFileData = (headers: string[], dataRows: string[][]) => {
+    const rows: Record<string, string>[] = [];
+    for (const values of dataRows) {
+      const row: Record<string, string> = {};
+      headers.forEach((h, idx) => { row[h] = values[idx] || ''; });
+      rows.push(row);
+    }
+    return rows;
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = ev.target?.result as string;
-      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-      if (lines.length < 2) {
-        toast.error('CSV must have a header row and at least one data row');
-        return;
-      }
-      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-      // Check if it's a multi-column CSV with known fields
-      const knownFields = ['serial', 'name', 'designation', 'empid', 'department', 'number', 'code'];
-      const isMultiColumn = headers.some(h => knownFields.includes(h));
+    const ext = file.name.split('.').pop()?.toLowerCase();
+    setUploadedFileName(file.name);
 
-      if (isMultiColumn) {
-        const rows: Record<string, string>[] = [];
-        for (let i = 1; i < lines.length; i++) {
-          const values = lines[i].split(',').map(v => v.trim());
-          const row: Record<string, string> = {};
-          headers.forEach((h, idx) => { row[h] = values[idx] || ''; });
-          rows.push(row);
+    if (ext === 'xlsx' || ext === 'xls') {
+      // Excel file
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = new Uint8Array(ev.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json<string[]>(sheet, { header: 1 });
+          
+          if (jsonData.length < 2) {
+            toast.error('File must have a header row and at least one data row');
+            return;
+          }
+          
+          const headers = (jsonData[0] as string[]).map(h => String(h).trim());
+          const dataRows = jsonData.slice(1).filter((r: any) => r.length > 0).map((r: any) => r.map((c: any) => String(c ?? '').trim()));
+          
+          setFileHeaders(headers);
+          const rows = parseFileData(headers, dataRows);
+          setCsvRows(rows);
+          setCsvSerials([]);
+          
+          // Auto-map columns
+          const mapping = autoMapColumns(headers, detectedVariables);
+          setColumnMapping(mapping);
+          
+          toast.success(`${rows.length} records loaded from Excel (${headers.length} columns)`);
+        } catch (err) {
+          toast.error('Failed to parse Excel file');
+          console.error(err);
         }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      // CSV/TXT file
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const text = ev.target?.result as string;
+        const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+        if (lines.length < 2) {
+          toast.error('File must have a header row and at least one data row');
+          return;
+        }
+        const headers = lines[0].split(',').map(h => h.trim());
+        const dataRows = lines.slice(1).map(l => l.split(',').map(v => v.trim()));
+        
+        setFileHeaders(headers);
+        const rows = parseFileData(headers, dataRows);
         setCsvRows(rows);
         setCsvSerials([]);
-        toast.success(`${rows.length} records loaded from CSV (columns: ${headers.join(', ')})`);
-      } else {
-        // Simple single-column CSV
-        const data = lines[0]?.match(/serial|number|code/i) ? lines.slice(1) : lines;
-        setCsvSerials(data);
-        setCsvRows([]);
-        toast.success(`${data.length} serials loaded from CSV`);
-      }
-    };
-    reader.readAsText(file);
+        
+        // Auto-map columns
+        const mapping = autoMapColumns(headers, detectedVariables);
+        setColumnMapping(mapping);
+        
+        toast.success(`${rows.length} records loaded (${headers.length} columns)`);
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  // Resolve a variable value from a CSV row using column mapping
+  const resolveVar = (varName: string, csvRow?: Record<string, string>, serial?: string): string => {
+    const mappedCol = columnMapping[varName];
+    if (mappedCol && csvRow && csvRow[mappedCol] !== undefined) {
+      return csvRow[mappedCol];
+    }
+    // Fallbacks
+    switch (varName) {
+      case 'serial': return serial || '';
+      case 'prefixOnly': return serialPrefix;
+      case 'date': return new Date().toISOString().split('T')[0];
+      case 'batch': return 'BATCH-001';
+      case 'prefix': return serial || serialPrefix;
+      case 'name': return csvRow?.name || serial || '';
+      case 'designation': return csvRow?.designation || '';
+      case 'empId': return csvRow?.empid || serial || '';
+      case 'department': return csvRow?.department || '';
+      default: return '';
+    }
   };
 
   const generateSerials = (): string[] => {
-    if (csvRows.length > 0) return csvRows.map(r => r.serial || r.empid || r.number || r.code || '');
+    if (csvRows.length > 0) {
+      const serialCol = columnMapping['serial'];
+      return csvRows.map(r => (serialCol ? r[serialCol] : r.serial || r.empid || r.number || r.code) || '');
+    }
     if (csvSerials.length > 0) return csvSerials;
     const serials: string[] = [];
     const seen = new Set<string>();
@@ -128,16 +245,9 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
 
     for (const el of elements) {
       const rawText = el.text || '';
-      const text = skipVariableReplace ? rawText : rawText
-        .replace(/\{\{serial\}\}/g, serial)
-        .replace(/\{\{prefixOnly\}\}/g, serialPrefix)
-        .replace(/\{\{date\}\}/g, new Date().toISOString().split('T')[0])
-        .replace(/\{\{batch\}\}/g, 'BATCH-001')
-        .replace(/\{\{prefix\}\}/g, serial || serialPrefix)
-        .replace(/\{\{name\}\}/g, csvRow?.name || serial)
-        .replace(/\{\{designation\}\}/g, csvRow?.designation || '')
-        .replace(/\{\{empId\}\}/g, csvRow?.empid || serial)
-        .replace(/\{\{department\}\}/g, csvRow?.department || '');
+      const text = skipVariableReplace ? rawText : rawText.replace(/\{\{(\w+)\}\}/g, (match, varName) => {
+        return resolveVar(varName, csvRow, serial);
+      });
       const barcodeValue = skipVariableReplace ? (rawText || 'SAMPLE') : (text.length > 0 ? text : serial);
 
       switch (el.type) {
@@ -374,22 +484,61 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
                 {totalLabels} unique labels → {totalPages} page{totalPages !== 1 ? 's' : ''} ({cols}×{rows} per page)
               </div>
             </div>
-            <div>
-              <input type="file" accept=".csv,.txt" onChange={handleCSVUpload} className="hidden" id="csv-upload" />
-              <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => document.getElementById('csv-upload')?.click()}>
-                <Upload className="w-3.5 h-3.5" /> Upload CSV (serial or multi-column)
+            <div className="space-y-2">
+              <input type="file" accept=".csv,.txt,.xlsx,.xls" onChange={handleFileUpload} className="hidden" id="data-upload" />
+              <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => document.getElementById('data-upload')?.click()}>
+                <FileSpreadsheet className="w-3.5 h-3.5" /> Upload Excel / CSV
               </Button>
-              {csvSerials.length > 0 && <p className="text-xs text-muted-foreground mt-1">{csvSerials.length} serials from CSV (overrides range)</p>}
-              {csvRows.length > 0 && (
-                <div className="mt-2 bg-muted rounded-lg p-2 text-xs space-y-1">
-                  <p className="font-medium text-foreground">{csvRows.length} records from CSV</p>
-                  <p className="text-muted-foreground">Columns: {Object.keys(csvRows[0]).join(', ')}</p>
-                  <p className="text-muted-foreground">Sample: {Object.values(csvRows[0]).slice(0, 3).join(' | ')}</p>
+              
+              {uploadedFileName && (
+                <div className="bg-muted rounded-lg p-2 text-xs space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                    <span className="font-medium text-foreground">{uploadedFileName}</span>
+                  </div>
+                  <p className="text-muted-foreground">{csvRows.length} records · {fileHeaders.length} columns</p>
                 </div>
               )}
-              <p className="text-[10px] text-muted-foreground mt-1.5">
-                CSV columns: serial, name, designation, empid, department
-              </p>
+
+              {/* Auto-detected variables & mapping */}
+              {detectedVariables.length > 0 && fileHeaders.length > 0 && (
+                <div className="bg-muted/50 border border-border rounded-lg p-3 space-y-2">
+                  <p className="text-xs font-medium text-foreground">Field Mapping</p>
+                  <p className="text-[10px] text-muted-foreground">Variables detected in your design are auto-mapped to file columns. Adjust if needed.</p>
+                  {detectedVariables.map(varName => (
+                    <div key={varName} className="flex items-center gap-2">
+                      <code className="text-[11px] bg-muted px-1.5 py-0.5 rounded font-mono text-foreground min-w-[100px]">{`{{${varName}}}`}</code>
+                      <span className="text-muted-foreground text-[10px]">→</span>
+                      <Select
+                        value={columnMapping[varName] || '__none__'}
+                        onValueChange={v => setColumnMapping(prev => ({ ...prev, [varName]: v === '__none__' ? '' : v }))}
+                      >
+                        <SelectTrigger className="h-7 text-xs flex-1">
+                          <SelectValue placeholder="Not mapped" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">Not mapped</SelectItem>
+                          {fileHeaders.map(h => (
+                            <SelectItem key={h} value={h}>{h}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {columnMapping[varName] && (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                      )}
+                    </div>
+                  ))}
+                  {csvRows.length > 0 && (
+                    <div className="pt-1 border-t border-border">
+                      <p className="text-[10px] text-muted-foreground">Preview (Row 1): {detectedVariables.filter(v => columnMapping[v]).map(v => `${v}="${csvRows[0]?.[columnMapping[v]] || ''}"`).join(', ')}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {detectedVariables.length === 0 && (
+                <p className="text-[10px] text-muted-foreground">No <code className="bg-muted px-1 rounded">{`{{variables}}`}</code> detected in your design. Add variables like {`{{name}}, {{serial}}`} to your text elements.</p>
+              )}
             </div>
           </TabsContent>
 

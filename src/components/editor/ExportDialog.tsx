@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Download, Loader2, Upload, FileSpreadsheet, CheckCircle2 } from 'lucide-react';
+import { Download, Loader2, FileSpreadsheet, CheckCircle2 } from 'lucide-react';
 import { useEditor } from '@/contexts/EditorContext';
 import { jsPDF } from 'jspdf';
 import Konva from 'konva';
@@ -13,6 +13,7 @@ import { CanvasElement } from '@/types/editor';
 import JsBarcode from 'jsbarcode';
 import QRCode from 'qrcode';
 import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import * as XLSX from 'xlsx';
 
@@ -62,6 +63,9 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
   const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
   const [fileHeaders, setFileHeaders] = useState<string[]>([]);
   const [uploadedFileName, setUploadedFileName] = useState('');
+  const [exportFormat, setExportFormat] = useState<'pdf' | 'png'>('pdf');
+  const [bleedMm, setBleedMm] = useState(0);
+  const [showCropMarks, setShowCropMarks] = useState(false);
 
   // Auto-detect variables used in the design
   const detectedVariables = useMemo(() => {
@@ -230,10 +234,10 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
   };
 
   const renderLabelImage = async (serial: string, csvRow?: Record<string, string>, skipVariableReplace = false): Promise<string> => {
-    // Use 1:1 canvas size matching the design, then export at high pixelRatio for quality
-    const pixelW = canvasWidth;
-    const pixelH = canvasHeight;
-    const exportPixelRatio = 4; // High resolution for crisp output
+    // Keep the same coordinate system as DesignCanvas (mm -> px scale factor 3)
+    const renderScale = 3;
+    const pixelW = canvasWidth * renderScale;
+    const pixelH = canvasHeight * renderScale;
     const container = document.createElement('div');
     container.style.position = 'absolute';
     container.style.left = '-9999px';
@@ -247,7 +251,7 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
 
     for (const el of elements) {
       const rawText = el.text || '';
-      const text = skipVariableReplace ? rawText : rawText.replace(/\{\{(\w+)\}\}/g, (match, varName) => {
+      const text = skipVariableReplace ? rawText : rawText.replace(/\{\{(\w+)\}\}/g, (_match, varName) => {
         return resolveVar(varName, csvRow, serial);
       });
       const barcodeValue = skipVariableReplace ? (rawText || 'SAMPLE') : (text.length > 0 ? text : serial);
@@ -292,8 +296,12 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
             const canvas = document.createElement('canvas');
             JsBarcode(canvas, barcodeValue, {
               format: el.barcodeFormat || 'CODE128',
-              width: 2, height: Math.max(30, el.height - 20), displayValue: false,
-              margin: 2, background: '#FFFFFF', lineColor: el.fill || '#000000',
+              width: 2,
+              height: Math.max(30, el.height - 20),
+              displayValue: false,
+              margin: 3,
+              background: '#FFFFFF',
+              lineColor: el.fill || '#000000',
             });
             const img = new window.Image();
             img.src = canvas.toDataURL();
@@ -311,17 +319,18 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
               rotation: el.rotation,
               opacity: el.opacity,
             }));
-          } catch (err) { /* skip invalid barcodes */ }
+          } catch {
+            // skip invalid barcodes
+          }
           break;
         }
         case 'qrcode': {
           try {
-            // Generate QR at high resolution with proper quiet zone for scannability
-            const qrSize = Math.max(el.width, el.height) * exportPixelRatio;
+            // Quiet zone + high resolution for reliable scan
             const qrDataUrl = await QRCode.toDataURL(barcodeValue, {
-              width: qrSize,
-              margin: 2, // Quiet zone required for reliable scanning
-              errorCorrectionLevel: 'H', // Highest error correction
+              width: Math.max(el.width, el.height) * 2,
+              margin: 2,
+              errorCorrectionLevel: 'H',
               color: { dark: el.fill || '#000000', light: '#FFFFFF' },
             });
             const img = new window.Image();
@@ -331,7 +340,9 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
               x: el.x, y: el.y, width: el.width, height: el.height,
               image: img, rotation: el.rotation, opacity: el.opacity,
             }));
-          } catch (err) { /* skip */ }
+          } catch {
+            // skip
+          }
           break;
         }
         case 'image': {
@@ -340,12 +351,17 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
               const img = new window.Image();
               img.crossOrigin = 'anonymous';
               img.src = el.src;
-              await new Promise<void>((resolve, reject) => { img.onload = () => resolve(); img.onerror = () => reject(); });
+              await new Promise<void>((resolve, reject) => {
+                img.onload = () => resolve();
+                img.onerror = () => reject();
+              });
               layer.add(new Konva.Image({
                 x: el.x, y: el.y, width: el.width, height: el.height,
                 image: img, rotation: el.rotation, opacity: el.opacity,
               }));
-            } catch { /* skip */ }
+            } catch {
+              // skip
+            }
           }
           break;
         }
@@ -354,10 +370,41 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
 
     layer.batchDraw();
     await new Promise(r => setTimeout(r, 50));
-    const dataUrl = offStage.toDataURL({ pixelRatio: exportPixelRatio });
+    const dataUrl = offStage.toDataURL({ pixelRatio: 2 });
     offStage.destroy();
     document.body.removeChild(container);
     return dataUrl;
+  };
+
+  const sanitizeFilePart = (value: string) => value.replace(/[^a-zA-Z0-9-_]/g, '_');
+
+  const downloadDataUrl = (dataUrl: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = dataUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const drawCropMarks = (pdf: jsPDF, x: number, y: number, w: number, h: number, bleed: number) => {
+    const markLen = 3;
+    const gap = Math.max(0.8, bleed);
+    pdf.setDrawColor(0, 0, 0);
+    pdf.setLineWidth(0.2);
+
+    // Top-left
+    pdf.line(x - gap - markLen, y, x - gap, y);
+    pdf.line(x, y - gap - markLen, x, y - gap);
+    // Top-right
+    pdf.line(x + w + gap, y, x + w + gap + markLen, y);
+    pdf.line(x + w, y - gap - markLen, x + w, y - gap);
+    // Bottom-left
+    pdf.line(x - gap - markLen, y + h, x - gap, y + h);
+    pdf.line(x, y + h + gap, x, y + h + gap + markLen);
+    // Bottom-right
+    pdf.line(x + w + gap, y + h, x + w + gap + markLen, y + h);
+    pdf.line(x + w, y + h + gap, x + w, y + h + gap + markLen);
   };
 
   const handleExport = async () => {
@@ -365,6 +412,30 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
     setProgress(0);
     setProgressLabel('Preparing...');
     try {
+      if (exportFormat === 'png') {
+        if (exportMode === 'single') {
+          setProgressLabel('Rendering PNG...');
+          const pngUrl = await renderLabelImage('', undefined, true);
+          downloadDataUrl(pngUrl, `${sanitizeFilePart(projectName || 'label')}.png`);
+          setProgress(100);
+          toast.success('PNG exported');
+        } else {
+          const serials = generateSerials();
+          const totalSerials = serials.length;
+          for (let s = 0; s < totalSerials; s++) {
+            setProgressLabel(`Generating PNG ${s + 1}/${totalSerials}`);
+            const csvRow = csvRows.length > 0 ? csvRows[s] : undefined;
+            const pngUrl = await renderLabelImage(serials[s], csvRow);
+            const serialLabel = sanitizeFilePart(serials[s] || `label-${s + 1}`);
+            downloadDataUrl(pngUrl, `${sanitizeFilePart(projectName || 'label')}-${serialLabel}.png`);
+            setProgress(Math.round(((s + 1) / totalSerials) * 100));
+          }
+          toast.success(`${totalSerials} PNG label${totalSerials !== 1 ? 's' : ''} exported`);
+        }
+        setOpen(false);
+        return;
+      }
+
       const page = pageSize === 'Custom'
         ? { width: customW, height: customH }
         : PAGE_SIZES[pageSize as keyof typeof PAGE_SIZES];
@@ -372,6 +443,7 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
       const stickerW = (page.width - marginX * 2 - gapX * (cols - 1)) / cols;
       const stickerH = (page.height - marginY * 2 - gapY * (rows - 1)) / rows;
       const stickersPerPage = cols * rows;
+      const appliedBleed = Math.max(0, bleedMm);
 
       const pdf = new jsPDF({
         orientation: page.width > page.height ? 'landscape' : 'portrait',
@@ -381,14 +453,14 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
 
       if (exportMode === 'single') {
         setProgressLabel('Rendering label...');
-        // Render with variables resolved (using empty serial for fixed content)
         const dataUrl = await renderLabelImage('', undefined, true);
         for (let i = 0; i < stickersPerPage; i++) {
           const col = i % cols;
           const row = Math.floor(i / cols);
           const x = marginX + col * (stickerW + gapX);
           const y = marginY + row * (stickerH + gapY);
-          pdf.addImage(dataUrl, 'PNG', x, y, stickerW, stickerH);
+          pdf.addImage(dataUrl, 'PNG', x - appliedBleed, y - appliedBleed, stickerW + appliedBleed * 2, stickerH + appliedBleed * 2);
+          if (showCropMarks) drawCropMarks(pdf, x, y, stickerW, stickerH, appliedBleed);
         }
         setProgress(100);
       } else {
@@ -409,7 +481,8 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
           setProgressLabel(`Generating ${serials[s]} (${s + 1}/${totalSerials})`);
           const csvRow = csvRows.length > 0 ? csvRows[s] : undefined;
           const labelImage = await renderLabelImage(serials[s], csvRow);
-          pdf.addImage(labelImage, 'PNG', x, y, stickerW, stickerH);
+          pdf.addImage(labelImage, 'PNG', x - appliedBleed, y - appliedBleed, stickerW + appliedBleed * 2, stickerH + appliedBleed * 2);
+          if (showCropMarks) drawCropMarks(pdf, x, y, stickerW, stickerH, appliedBleed);
           stickerIdx++;
           setProgress(Math.round(((s + 1) / totalSerials) * 100));
         }
@@ -420,8 +493,8 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
       toast.success(`PDF exported with ${exportMode === 'bulk' ? generateSerials().length : stickersPerPage} labels`);
       setOpen(false);
     } catch (err) {
-      console.error('PDF export failed:', err);
-      toast.error('PDF export failed. Check console for details.');
+      console.error('Export failed:', err);
+      toast.error('Export failed. Check console for details.');
     } finally {
       setExporting(false);
       setProgress(0);
@@ -444,7 +517,7 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Export PDF</DialogTitle>
+          <DialogTitle>Export Labels</DialogTitle>
         </DialogHeader>
 
         <Tabs value={exportMode} onValueChange={v => setExportMode(v as 'single' | 'bulk')}>
@@ -493,18 +566,17 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
               <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => document.getElementById('data-upload')?.click()}>
                 <FileSpreadsheet className="w-3.5 h-3.5" /> Upload Excel / CSV
               </Button>
-              
+
               {uploadedFileName && (
                 <div className="bg-muted rounded-lg p-2 text-xs space-y-1">
                   <div className="flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+                    <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
                     <span className="font-medium text-foreground">{uploadedFileName}</span>
                   </div>
                   <p className="text-muted-foreground">{csvRows.length} records · {fileHeaders.length} columns</p>
                 </div>
               )}
 
-              {/* Auto-detected variables & mapping */}
               {detectedVariables.length > 0 && fileHeaders.length > 0 && (
                 <div className="bg-muted/50 border border-border rounded-lg p-3 space-y-2">
                   <p className="text-xs font-medium text-foreground">Field Mapping</p>
@@ -528,7 +600,7 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
                         </SelectContent>
                       </Select>
                       {columnMapping[varName] && (
-                        <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-primary shrink-0" />
                       )}
                     </div>
                   ))}
@@ -547,11 +619,22 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
           </TabsContent>
 
           <TabsContent value="single" className="mt-3">
-            <p className="text-xs text-muted-foreground">Exports the current canvas design repeated across the page grid ({cols}×{rows} = {cols * rows} per page).</p>
+            <p className="text-xs text-muted-foreground">Exports one designed label (or a page grid if rows/columns are more than 1).</p>
           </TabsContent>
         </Tabs>
 
         <div className="space-y-4 mt-4">
+          <div>
+            <Label className="text-xs text-muted-foreground">Export Format</Label>
+            <Select value={exportFormat} onValueChange={v => setExportFormat(v as 'pdf' | 'png')}>
+              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pdf">PDF (print layout)</SelectItem>
+                <SelectItem value="png">PNG (individual labels)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div>
             <Label className="text-xs text-muted-foreground">Page Size</Label>
             <Select value={pageSize} onValueChange={setPageSize}>
@@ -622,6 +705,20 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
             </div>
           </div>
 
+          {exportFormat === 'pdf' && (
+            <div className="space-y-2 rounded-md border border-border bg-muted/40 p-3">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Print Options</Label>
+              <div>
+                <Label className="text-[10px] text-muted-foreground">Bleed (mm)</Label>
+                <Input type="number" min={0} max={5} step={0.1} value={bleedMm} onChange={e => setBleedMm(Number(e.target.value))} className="mt-1 h-8 text-xs" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox checked={showCropMarks} onCheckedChange={checked => setShowCropMarks(checked === true)} id="crop-marks" />
+                <Label htmlFor="crop-marks" className="text-xs text-foreground">Show crop marks</Label>
+              </div>
+            </div>
+          )}
+
           {/* Progress bar during export */}
           {exporting && (
             <div className="space-y-2">
@@ -634,7 +731,7 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
             {exporting ? (
               <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Generating {progress}%</>
             ) : (
-              <><Download className="w-4 h-4 mr-2" /> Export {totalLabels} Label{totalLabels !== 1 ? 's' : ''} as PDF</>
+              <><Download className="w-4 h-4 mr-2" /> Export {totalLabels} Label{totalLabels !== 1 ? 's' : ''} as {exportFormat.toUpperCase()}</>
             )}
           </Button>
         </div>

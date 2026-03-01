@@ -42,10 +42,20 @@ const LeftSidebar = () => {
   const handleLoadTemplate = (templateId: string) => {
     const template = templates.find(t => t.id === templateId);
     if (template) {
-      if (template.canvasWidth && template.canvasHeight) {
-        setCanvasSize(template.canvasWidth, template.canvasHeight);
-      }
-      loadElements(instantiateTemplate(template));
+      const tW = template.canvasWidth || 400;
+      const tH = template.canvasHeight || 300;
+      setCanvasSize(tW, tH);
+      const pixelW = tW * 3;
+      const pixelH = tH * 3;
+      // Center template elements on the pixel canvas
+      const offsetX = (pixelW - tW) / 2;
+      const offsetY = (pixelH - tH) / 2;
+      const els = instantiateTemplate(template).map(el => ({
+        ...el,
+        x: el.x + offsetX,
+        y: el.y + offsetY,
+      }));
+      loadElements(els);
     }
   };
 

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,52 +6,47 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 0%;
+    --background: 240 10% 98%;
+    --foreground: 240 10% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 0%;
+    --card-foreground: 240 10% 8%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 0%;
+    --popover-foreground: 240 10% 8%;
 
-    --primary: 43 69% 52%;
+    --primary: 252 75% 60%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 97.6%;
-    --secondary-foreground: 0 0% 27%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 25%;
 
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 27%;
+    --muted: 240 5% 94%;
+    --muted-foreground: 240 4% 46%;
 
-    --accent: 43 69% 52%;
+    --accent: 252 75% 60%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 91.8%;
-    --input: 0 0% 91.8%;
-    --ring: 43 69% 52%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 252 75% 60%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --canvas-bg: 0 0% 93%;
-    --surface: 0 0% 97.6%;
-    --gold: 43 69% 52%;
-    --gold-hover: 43 65% 45%;
-    --gold-glow: 43 69% 52%;
-    --shadow-soft: 0 4px 12px hsla(0, 0%, 0%, 0.05);
-    --shadow-card: 0 2px 8px hsla(0, 0%, 0%, 0.08);
+    --canvas-bg: 240 5% 93%;
+    --surface: 240 5% 97%;
 
-    --sidebar-background: 0 0% 97.6%;
-    --sidebar-foreground: 0 0% 27%;
-    --sidebar-primary: 43 69% 52%;
+    --sidebar-background: 240 5% 97%;
+    --sidebar-foreground: 240 6% 25%;
+    --sidebar-primary: 252 75% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 93%;
-    --sidebar-accent-foreground: 0 0% 0%;
-    --sidebar-border: 0 0% 91.8%;
-    --sidebar-ring: 43 69% 52%;
+    --sidebar-accent: 240 5% 93%;
+    --sidebar-accent-foreground: 240 10% 8%;
+    --sidebar-border: 240 6% 90%;
+    --sidebar-ring: 252 75% 60%;
   }
 }
 
@@ -67,11 +62,13 @@
 }
 
 @layer utilities {
-  .gold-glow {
-    box-shadow: 0 0 20px hsla(43, 69%, 52%, 0.3);
+  .brand-gradient {
+    background: linear-gradient(135deg, hsl(252 75% 60%), hsl(280 70% 55%), hsl(320 70% 55%));
   }
-  
-  .gold-glow-hover:hover {
-    box-shadow: 0 0 24px hsla(43, 69%, 52%, 0.4);
+  .brand-glow {
+    box-shadow: 0 0 20px hsla(252, 75%, 60%, 0.3);
+  }
+  .brand-glow-hover:hover {
+    box-shadow: 0 0 28px hsla(252, 75%, 60%, 0.4);
   }
 }

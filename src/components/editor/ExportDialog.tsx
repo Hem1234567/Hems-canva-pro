@@ -47,6 +47,7 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
   const [serialEnd, setSerialEnd] = useState(10);
   const [serialPadding, setSerialPadding] = useState(4);
   const [csvSerials, setCsvSerials] = useState<string[]>([]);
+  const [csvRows, setCsvRows] = useState<Record<string, string>[]>([]);
   const [exportMode, setExportMode] = useState<'single' | 'bulk'>('bulk');
 
   const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,14 +57,39 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
     reader.onload = (ev) => {
       const text = ev.target?.result as string;
       const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-      const data = lines[0]?.match(/serial|number|code/i) ? lines.slice(1) : lines;
-      setCsvSerials(data);
-      toast.success(`${data.length} serials loaded from CSV`);
+      if (lines.length < 2) {
+        toast.error('CSV must have a header row and at least one data row');
+        return;
+      }
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      // Check if it's a multi-column CSV with known fields
+      const knownFields = ['serial', 'name', 'designation', 'empid', 'department', 'number', 'code'];
+      const isMultiColumn = headers.some(h => knownFields.includes(h));
+
+      if (isMultiColumn) {
+        const rows: Record<string, string>[] = [];
+        for (let i = 1; i < lines.length; i++) {
+          const values = lines[i].split(',').map(v => v.trim());
+          const row: Record<string, string> = {};
+          headers.forEach((h, idx) => { row[h] = values[idx] || ''; });
+          rows.push(row);
+        }
+        setCsvRows(rows);
+        setCsvSerials([]);
+        toast.success(`${rows.length} records loaded from CSV (columns: ${headers.join(', ')})`);
+      } else {
+        // Simple single-column CSV
+        const data = lines[0]?.match(/serial|number|code/i) ? lines.slice(1) : lines;
+        setCsvSerials(data);
+        setCsvRows([]);
+        toast.success(`${data.length} serials loaded from CSV`);
+      }
     };
     reader.readAsText(file);
   };
 
   const generateSerials = (): string[] => {
+    if (csvRows.length > 0) return csvRows.map(r => r.serial || r.empid || r.number || r.code || '');
     if (csvSerials.length > 0) return csvSerials;
     const serials: string[] = [];
     const seen = new Set<string>();
@@ -77,7 +103,7 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
     return serials;
   };
 
-  const renderLabelImage = async (serial: string): Promise<string> => {
+  const renderLabelImage = async (serial: string, csvRow?: Record<string, string>): Promise<string> => {
     const pixelW = canvasWidth * 3;
     const pixelH = canvasHeight * 3;
     const container = document.createElement('div');
@@ -97,10 +123,10 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
         .replace(/\{\{date\}\}/g, new Date().toISOString().split('T')[0])
         .replace(/\{\{batch\}\}/g, 'BATCH-001')
         .replace(/\{\{prefix\}\}/g, serialPrefix)
-        .replace(/\{\{name\}\}/g, serial)
-        .replace(/\{\{designation\}\}/g, '')
-        .replace(/\{\{empId\}\}/g, serial)
-        .replace(/\{\{department\}\}/g, '');
+        .replace(/\{\{name\}\}/g, csvRow?.name || serial)
+        .replace(/\{\{designation\}\}/g, csvRow?.designation || '')
+        .replace(/\{\{empId\}\}/g, csvRow?.empid || serial)
+        .replace(/\{\{department\}\}/g, csvRow?.department || '');
       // For barcode/qrcode: use replaced text, or fall back to raw serial
       const barcodeValue = text.length > 0 ? text : serial;
 
@@ -257,7 +283,8 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
           const y = marginY + row * (stickerH + gapY);
 
           setProgressLabel(`Generating ${serials[s]} (${s + 1}/${totalSerials})`);
-          const labelImage = await renderLabelImage(serials[s]);
+          const csvRow = csvRows.length > 0 ? csvRows[s] : undefined;
+          const labelImage = await renderLabelImage(serials[s], csvRow);
           pdf.addImage(labelImage, 'PNG', x, y, stickerW, stickerH);
           stickerIdx++;
           setProgress(Math.round(((s + 1) / totalSerials) * 100));
@@ -279,7 +306,7 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
   };
 
   const totalLabels = exportMode === 'bulk'
-    ? (csvSerials.length > 0 ? csvSerials.length : Math.max(0, serialEnd - serialStart + 1))
+    ? (csvRows.length > 0 ? csvRows.length : csvSerials.length > 0 ? csvSerials.length : Math.max(0, serialEnd - serialStart + 1))
     : cols * rows;
   const totalPages = Math.ceil(totalLabels / (cols * rows));
 
@@ -340,9 +367,19 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
             <div>
               <input type="file" accept=".csv,.txt" onChange={handleCSVUpload} className="hidden" id="csv-upload" />
               <Button variant="outline" size="sm" className="w-full gap-2" onClick={() => document.getElementById('csv-upload')?.click()}>
-                <Upload className="w-3.5 h-3.5" /> Or Upload CSV
+                <Upload className="w-3.5 h-3.5" /> Upload CSV (serial or multi-column)
               </Button>
               {csvSerials.length > 0 && <p className="text-xs text-muted-foreground mt-1">{csvSerials.length} serials from CSV (overrides range)</p>}
+              {csvRows.length > 0 && (
+                <div className="mt-2 bg-muted rounded-lg p-2 text-xs space-y-1">
+                  <p className="font-medium text-foreground">{csvRows.length} records from CSV</p>
+                  <p className="text-muted-foreground">Columns: {Object.keys(csvRows[0]).join(', ')}</p>
+                  <p className="text-muted-foreground">Sample: {Object.values(csvRows[0]).slice(0, 3).join(' | ')}</p>
+                </div>
+              )}
+              <p className="text-[10px] text-muted-foreground mt-1.5">
+                CSV columns: serial, name, designation, empid, department
+              </p>
             </div>
           </TabsContent>
 

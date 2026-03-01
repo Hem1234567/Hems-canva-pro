@@ -39,6 +39,11 @@ const RightPanel = () => {
   }, [selectedElement?.fontFamily]);
 
   if (!selectedElement) {
+    const isPortrait = canvasHeight > canvasWidth;
+    const toggleOrientation = () => {
+      setCanvasSize(canvasHeight, canvasWidth);
+    };
+
     return (
       <aside className="w-[300px] border-l border-border bg-card p-4 shrink-0 overflow-y-auto">
         <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">Canvas Settings</h3>
@@ -50,6 +55,27 @@ const RightPanel = () => {
           <div>
             <Label className="text-xs text-muted-foreground">Height (mm)</Label>
             <Input type="number" value={canvasHeight} onChange={e => setCanvasSize(canvasWidth, Number(e.target.value))} className="mt-1" />
+          </div>
+          <div>
+            <Label className="text-xs text-muted-foreground mb-1.5 block">Orientation</Label>
+            <div className="flex gap-2">
+              <Button
+                variant={isPortrait ? 'default' : 'outline'}
+                size="sm"
+                className="flex-1 text-xs"
+                onClick={() => { if (!isPortrait) toggleOrientation(); }}
+              >
+                Portrait
+              </Button>
+              <Button
+                variant={!isPortrait ? 'default' : 'outline'}
+                size="sm"
+                className="flex-1 text-xs"
+                onClick={() => { if (isPortrait) toggleOrientation(); }}
+              >
+                Landscape
+              </Button>
+            </div>
           </div>
         </div>
         <Separator className="my-4" />
@@ -236,16 +262,33 @@ const RightPanel = () => {
 
         {(el.type === 'text' || el.type === 'barcode' || el.type === 'qrcode') && (
           <Section title="Variable Binding">
-            <div className="flex flex-wrap gap-1.5">
-              {['{{serial}}', '{{date}}', '{{batch}}', '{{prefix}}'].map(v => (
-                <button
-                  key={v}
-                  onClick={() => update({ text: v })}
-                  className="text-xs font-mono border border-border rounded px-2 py-1 hover:border-primary hover:text-primary transition-colors"
-                >
-                  {v}
-                </button>
-              ))}
+            <div>
+              <p className="text-[10px] text-muted-foreground mb-1.5">Label Variables</p>
+              <div className="flex flex-wrap gap-1.5">
+                {['{{serial}}', '{{date}}', '{{batch}}', '{{prefix}}'].map(v => (
+                  <button
+                    key={v}
+                    onClick={() => update({ text: v })}
+                    className="text-xs font-mono border border-border rounded px-2 py-1 hover:border-primary hover:text-primary transition-colors"
+                  >
+                    {v}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="mt-2">
+              <p className="text-[10px] text-muted-foreground mb-1.5">ID Card Variables</p>
+              <div className="flex flex-wrap gap-1.5">
+                {['{{name}}', '{{designation}}', '{{empId}}', '{{department}}'].map(v => (
+                  <button
+                    key={v}
+                    onClick={() => update({ text: v })}
+                    className="text-xs font-mono border border-border rounded px-2 py-1 hover:border-primary hover:text-primary transition-colors"
+                  >
+                    {v}
+                  </button>
+                ))}
+              </div>
             </div>
           </Section>
         )}

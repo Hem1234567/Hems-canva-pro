@@ -37,22 +37,22 @@ const Landing = () => {
       </header>
 
       {/* Hero */}
-      <section className="max-w-6xl mx-auto px-6 py-24 text-center">
-        <div className="inline-block px-4 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium mb-6">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-24 text-center">
+        <div className="inline-block px-4 py-1.5 bg-primary/10 text-primary rounded-full text-sm font-medium mb-4 sm:mb-6">
           Professional Label Design Tool
         </div>
-        <h1 className="text-5xl md:text-6xl font-bold text-foreground leading-tight mb-6">
+        <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold text-foreground leading-tight mb-4 sm:mb-6">
           Design Labels.<br />
           <span className="text-primary">Generate Serials.</span><br />
           Export Anywhere.
         </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-10">
+        <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-10 px-2">
           Create barcodes, QR codes, and sticker labels with a powerful visual editor. 
           Bulk generate with serial numbers and export high-quality PDFs.
         </p>
         <div className="flex items-center justify-center gap-4">
           <Link to={user ? '/dashboard' : '/auth?mode=signup'}>
-            <Button size="lg" className="gap-2 text-base px-8">
+            <Button size="lg" className="gap-2 text-sm sm:text-base px-6 sm:px-8">
               Get Started Free <ArrowRight className="w-5 h-5" />
             </Button>
           </Link>
@@ -60,8 +60,8 @@ const Landing = () => {
       </section>
 
       {/* Features */}
-      <section className="max-w-6xl mx-auto px-6 py-16">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {[
             { icon: Layers, title: 'Visual Editor', desc: 'Drag-and-drop canvas with text, shapes, and images' },
             { icon: QrCode, title: 'Barcodes & QR', desc: 'Real CODE128, EAN13, QR codes rendered on canvas' },

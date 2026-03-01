@@ -17,16 +17,66 @@ interface StockShape {
 }
 
 const stockShapes: StockShape[] = [
+  // Cards & Containers
   { name: 'Rounded Card', category: 'Cards', element: { type: 'rect', width: 200, height: 120, fill: '#f1f5f9', stroke: '#e2e8f0', strokeWidth: 1, opacity: 1, cornerRadius: 12 } },
   { name: 'Accent Bar', category: 'Cards', element: { type: 'rect', width: 4, height: 60, fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, opacity: 1, cornerRadius: 2 } },
   { name: 'Pill Button', category: 'Cards', element: { type: 'rect', width: 160, height: 44, fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, opacity: 1, cornerRadius: 22 } },
   { name: 'Badge', category: 'Cards', element: { type: 'rect', width: 80, height: 28, fill: '#dbeafe', stroke: 'transparent', strokeWidth: 0, opacity: 1, cornerRadius: 14 } },
+  { name: 'Tag', category: 'Cards', element: { type: 'rect', width: 90, height: 32, fill: '#fef3c7', stroke: '#f59e0b', strokeWidth: 1, opacity: 1, cornerRadius: 6 } },
+  { name: 'Toast Card', category: 'Cards', element: { type: 'rect', width: 280, height: 64, fill: '#ffffff', stroke: '#e5e7eb', strokeWidth: 1, opacity: 1, cornerRadius: 10 } },
+
+  // Gradient Backgrounds
+  { name: 'Purple Gradient', category: 'Backgrounds', element: { type: 'rect', width: 400, height: 300, fill: '#7c3aed', stroke: 'transparent', strokeWidth: 0, opacity: 1, cornerRadius: 0 } },
+  { name: 'Ocean Blue', category: 'Backgrounds', element: { type: 'rect', width: 400, height: 300, fill: '#0ea5e9', stroke: 'transparent', strokeWidth: 0, opacity: 1, cornerRadius: 0 } },
+  { name: 'Sunset Orange', category: 'Backgrounds', element: { type: 'rect', width: 400, height: 300, fill: '#f97316', stroke: 'transparent', strokeWidth: 0, opacity: 1, cornerRadius: 0 } },
+  { name: 'Forest Green', category: 'Backgrounds', element: { type: 'rect', width: 400, height: 300, fill: '#059669', stroke: 'transparent', strokeWidth: 0, opacity: 1, cornerRadius: 0 } },
+  { name: 'Rose Pink', category: 'Backgrounds', element: { type: 'rect', width: 400, height: 300, fill: '#e11d48', stroke: 'transparent', strokeWidth: 0, opacity: 1, cornerRadius: 0 } },
+  { name: 'Charcoal Dark', category: 'Backgrounds', element: { type: 'rect', width: 400, height: 300, fill: '#1e293b', stroke: 'transparent', strokeWidth: 0, opacity: 1, cornerRadius: 0 } },
+  { name: 'Warm Beige', category: 'Backgrounds', element: { type: 'rect', width: 400, height: 300, fill: '#fef3c7', stroke: 'transparent', strokeWidth: 0, opacity: 1, cornerRadius: 0 } },
+  { name: 'Soft Lavender', category: 'Backgrounds', element: { type: 'rect', width: 400, height: 300, fill: '#ede9fe', stroke: 'transparent', strokeWidth: 0, opacity: 1, cornerRadius: 0 } },
+  { name: 'Dark Overlay', category: 'Backgrounds', element: { type: 'rect', width: 400, height: 300, fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 0.5, cornerRadius: 0 } },
+  { name: 'Light Overlay', category: 'Backgrounds', element: { type: 'rect', width: 400, height: 300, fill: '#ffffff', stroke: 'transparent', strokeWidth: 0, opacity: 0.6, cornerRadius: 0 } },
+
+  // Image Placeholders
+  { name: 'Photo Square', category: 'Placeholders', element: { type: 'image', width: 200, height: 200, fill: 'transparent', stroke: '#d1d5db', strokeWidth: 2, opacity: 1, cornerRadius: 0, src: '' } },
+  { name: 'Photo Landscape', category: 'Placeholders', element: { type: 'image', width: 300, height: 200, fill: 'transparent', stroke: '#d1d5db', strokeWidth: 2, opacity: 1, cornerRadius: 0, src: '' } },
+  { name: 'Photo Portrait', category: 'Placeholders', element: { type: 'image', width: 200, height: 280, fill: 'transparent', stroke: '#d1d5db', strokeWidth: 2, opacity: 1, cornerRadius: 0, src: '' } },
+  { name: 'Avatar Circle', category: 'Placeholders', element: { type: 'image', width: 100, height: 100, fill: 'transparent', stroke: '#d1d5db', strokeWidth: 2, opacity: 1, cornerRadius: 50, src: '' } },
+  { name: 'Hero Banner', category: 'Placeholders', element: { type: 'image', width: 500, height: 180, fill: 'transparent', stroke: '#d1d5db', strokeWidth: 1, opacity: 1, cornerRadius: 8, src: '' } },
+  { name: 'Thumbnail', category: 'Placeholders', element: { type: 'image', width: 120, height: 90, fill: 'transparent', stroke: '#d1d5db', strokeWidth: 1, opacity: 1, cornerRadius: 6, src: '' } },
+
+  // Decorative Frames
+  { name: 'Thin Frame', category: 'Frames', element: { type: 'rect', width: 240, height: 180, fill: 'transparent', stroke: '#000000', strokeWidth: 1, opacity: 1, cornerRadius: 0 } },
+  { name: 'Bold Frame', category: 'Frames', element: { type: 'rect', width: 240, height: 180, fill: 'transparent', stroke: '#000000', strokeWidth: 4, opacity: 1, cornerRadius: 0 } },
+  { name: 'Rounded Frame', category: 'Frames', element: { type: 'rect', width: 240, height: 180, fill: 'transparent', stroke: '#6366f1', strokeWidth: 2, opacity: 1, cornerRadius: 16 } },
+  { name: 'Double Frame', category: 'Frames', element: { type: 'rect', width: 220, height: 160, fill: 'transparent', stroke: '#d4af37', strokeWidth: 3, opacity: 1, cornerRadius: 4 } },
+  { name: 'Circle Frame', category: 'Frames', element: { type: 'circle', width: 160, height: 160, fill: 'transparent', stroke: '#000000', strokeWidth: 2, opacity: 1 } },
+  { name: 'Gold Frame', category: 'Frames', element: { type: 'rect', width: 260, height: 200, fill: 'transparent', stroke: '#d4af37', strokeWidth: 4, opacity: 1, cornerRadius: 0 } },
+  { name: 'Shadow Frame', category: 'Frames', element: { type: 'rect', width: 240, height: 180, fill: '#ffffff', stroke: '#e5e7eb', strokeWidth: 1, opacity: 1, cornerRadius: 8 } },
+  { name: 'Accent Frame', category: 'Frames', element: { type: 'rect', width: 240, height: 180, fill: 'transparent', stroke: '#e11d48', strokeWidth: 3, opacity: 1, cornerRadius: 12 } },
+
+  // Lines & Dividers
   { name: 'Divider', category: 'Lines', element: { type: 'line', width: 300, height: 1, fill: '#e2e8f0', strokeWidth: 1, opacity: 1 } },
   { name: 'Thick Divider', category: 'Lines', element: { type: 'line', width: 200, height: 4, fill: '#6366f1', strokeWidth: 4, opacity: 1 } },
+  { name: 'Gold Line', category: 'Lines', element: { type: 'line', width: 250, height: 2, fill: '#d4af37', strokeWidth: 2, opacity: 1 } },
+  { name: 'Dotted Line', category: 'Lines', element: { type: 'line', width: 300, height: 1, fill: '#9ca3af', strokeWidth: 1, opacity: 1 } },
+  { name: 'Short Accent', category: 'Lines', element: { type: 'line', width: 60, height: 3, fill: '#6366f1', strokeWidth: 3, opacity: 1 } },
+
+  // Basic Shapes
   { name: 'Circle Dot', category: 'Shapes', element: { type: 'circle', width: 16, height: 16, fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, opacity: 1 } },
   { name: 'Large Circle', category: 'Shapes', element: { type: 'circle', width: 120, height: 120, fill: '#f1f5f9', stroke: '#e2e8f0', strokeWidth: 1, opacity: 1 } },
   { name: 'Square Frame', category: 'Shapes', element: { type: 'rect', width: 100, height: 100, fill: 'transparent', stroke: '#000000', strokeWidth: 2, opacity: 1 } },
-  { name: 'Overlay', category: 'Shapes', element: { type: 'rect', width: 400, height: 300, fill: '#000000', stroke: 'transparent', strokeWidth: 0, opacity: 0.5 } },
+  { name: 'Filled Square', category: 'Shapes', element: { type: 'rect', width: 80, height: 80, fill: '#6366f1', stroke: 'transparent', strokeWidth: 0, opacity: 1, cornerRadius: 4 } },
+  { name: 'Small Circle', category: 'Shapes', element: { type: 'circle', width: 40, height: 40, fill: '#f59e0b', stroke: 'transparent', strokeWidth: 0, opacity: 1 } },
+  { name: 'Diamond', category: 'Shapes', element: { type: 'rect', width: 60, height: 60, fill: '#7c3aed', stroke: 'transparent', strokeWidth: 0, opacity: 1, rotation: 45 } },
+
+  // Text Blocks
+  { name: 'Heading', category: 'Text Blocks', element: { type: 'text', width: 300, height: 50, text: 'Your Heading Here', fontSize: 36, fontFamily: 'Space Grotesk', fontStyle: 'bold', fill: '#0f172a', opacity: 1 } },
+  { name: 'Subheading', category: 'Text Blocks', element: { type: 'text', width: 280, height: 36, text: 'Subheading text goes here', fontSize: 20, fontFamily: 'Inter', fontStyle: 'normal', fill: '#475569', opacity: 1 } },
+  { name: 'Body Copy', category: 'Text Blocks', element: { type: 'text', width: 260, height: 80, text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor.', fontSize: 14, fontFamily: 'Inter', fontStyle: 'normal', fill: '#64748b', opacity: 1 } },
+  { name: 'Caption', category: 'Text Blocks', element: { type: 'text', width: 200, height: 24, text: 'Caption or fine print', fontSize: 11, fontFamily: 'Inter', fontStyle: 'normal', fill: '#94a3b8', opacity: 1 } },
+  { name: 'CTA Button Text', category: 'Text Blocks', element: { type: 'text', width: 140, height: 30, text: 'Get Started', fontSize: 16, fontFamily: 'Inter', fontStyle: 'bold', fill: '#ffffff', opacity: 1, align: 'center' } },
+  { name: 'Monospace Code', category: 'Text Blocks', element: { type: 'text', width: 240, height: 28, text: 'const design = "awesome"', fontSize: 13, fontFamily: 'Fira Code', fontStyle: 'normal', fill: '#22c55e', opacity: 1 } },
 ];
 
 const iconCategories = [

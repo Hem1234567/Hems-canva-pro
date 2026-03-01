@@ -144,21 +144,26 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const addElement = useCallback((type: ElementType) => {
-    const el = createDefaultElement(type, 50 + Math.random() * 100, 50 + Math.random() * 100);
+    const defaults = createDefaultElement(type, 0, 0);
+    const pixelW = canvasWidth * 3;
+    const pixelH = canvasHeight * 3;
+    const el = { ...defaults, x: (pixelW - defaults.width) / 2, y: (pixelH - defaults.height) / 2 };
     const newElements = [...elements, el];
     setElements(newElements);
     setSelectedId(el.id);
     pushHistory(newElements);
-  }, [elements, pushHistory, setElements]);
+  }, [elements, pushHistory, setElements, canvasWidth, canvasHeight]);
 
   const addImageElement = useCallback((src: string) => {
-    const el = createDefaultElement('image', 50 + Math.random() * 100, 50 + Math.random() * 100);
-    el.src = src;
+    const defaults = createDefaultElement('image', 0, 0);
+    const pixelW = canvasWidth * 3;
+    const pixelH = canvasHeight * 3;
+    const el = { ...defaults, src, x: (pixelW - defaults.width) / 2, y: (pixelH - defaults.height) / 2 };
     const newElements = [...elements, el];
     setElements(newElements);
     setSelectedId(el.id);
     pushHistory(newElements);
-  }, [elements, pushHistory, setElements]);
+  }, [elements, pushHistory, setElements, canvasWidth, canvasHeight]);
 
   const selectElement = useCallback((id: string | null) => {
     setSelectedId(id);

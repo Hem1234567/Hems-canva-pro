@@ -130,6 +130,7 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
       const rawText = el.text || '';
       const text = skipVariableReplace ? rawText : rawText
         .replace(/\{\{serial\}\}/g, serial)
+        .replace(/\{\{prefixOnly\}\}/g, serialPrefix)
         .replace(/\{\{date\}\}/g, new Date().toISOString().split('T')[0])
         .replace(/\{\{batch\}\}/g, 'BATCH-001')
         .replace(/\{\{prefix\}\}/g, serial || serialPrefix)

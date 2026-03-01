@@ -119,14 +119,14 @@ const LeftSidebar = () => {
 // Variable definitions per template category
 const categoryVariables: Record<string, { group: string; vars: string[] }[]> = {
   'label': [
-    { group: 'Label Variables', vars: ['{{serial}}', '{{date}}', '{{batch}}', '{{prefix}}', '{{name}}'] },
+    { group: 'Label Variables', vars: ['{{serial}}', '{{prefixOnly}}', '{{date}}', '{{batch}}', '{{prefix}}', '{{name}}'] },
   ],
   'id-card': [
     { group: 'ID Card Variables', vars: ['{{name}}', '{{designation}}', '{{empId}}', '{{department}}'] },
-    { group: 'Code Variables', vars: ['{{serial}}', '{{date}}'] },
+    { group: 'Code Variables', vars: ['{{serial}}', '{{prefixOnly}}', '{{date}}'] },
   ],
   'business-card': [
-    { group: 'Contact Variables', vars: ['{{name}}', '{{designation}}', '{{department}}', '{{serial}}'] },
+    { group: 'Contact Variables', vars: ['{{name}}', '{{designation}}', '{{department}}', '{{serial}}', '{{prefixOnly}}'] },
   ],
   'presentation': [
     { group: 'Presentation Variables', vars: ['{{date}}', '{{name}}'] },
@@ -143,7 +143,7 @@ const categoryVariables: Record<string, { group: string; vars: string[] }[]> = {
 };
 
 const defaultVariables = [
-  { group: 'Label Variables', vars: ['{{serial}}', '{{date}}', '{{batch}}', '{{prefix}}'] },
+  { group: 'Label Variables', vars: ['{{serial}}', '{{prefixOnly}}', '{{date}}', '{{batch}}', '{{prefix}}'] },
   { group: 'ID Card Variables', vars: ['{{name}}', '{{designation}}', '{{empId}}', '{{department}}'] },
 ];
 

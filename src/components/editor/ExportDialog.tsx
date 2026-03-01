@@ -20,9 +20,18 @@ interface ExportDialogProps {
 }
 
 const PAGE_SIZES = {
-  A4: { width: 210, height: 297 },
-  A5: { width: 148, height: 210 },
-  Custom: { width: 210, height: 297 },
+  'A4': { width: 210, height: 297 },
+  'A5': { width: 148, height: 210 },
+  'A3': { width: 297, height: 420 },
+  'Letter': { width: 216, height: 279 },
+  'Legal': { width: 216, height: 356 },
+  '4x6': { width: 102, height: 152 },
+  '4.5x4.5': { width: 114, height: 114 },
+  '5x7': { width: 127, height: 178 },
+  '3x5': { width: 76, height: 127 },
+  '6x9': { width: 152, height: 229 },
+  'CR80 Card': { width: 86, height: 54 },
+  'Custom': { width: 210, height: 297 },
 };
 
 const ExportDialog = ({ stageRef }: ExportDialogProps) => {
@@ -396,6 +405,15 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
               <SelectContent>
                 <SelectItem value="A4">A4 (210×297mm)</SelectItem>
                 <SelectItem value="A5">A5 (148×210mm)</SelectItem>
+                <SelectItem value="A3">A3 (297×420mm)</SelectItem>
+                <SelectItem value="Letter">Letter (8.5×11")</SelectItem>
+                <SelectItem value="Legal">Legal (8.5×14")</SelectItem>
+                <SelectItem value="4x6">4×6" (102×152mm)</SelectItem>
+                <SelectItem value="4.5x4.5">4.5×4.5" (114×114mm)</SelectItem>
+                <SelectItem value="5x7">5×7" (127×178mm)</SelectItem>
+                <SelectItem value="3x5">3×5" (76×127mm)</SelectItem>
+                <SelectItem value="6x9">6×9" (152×229mm)</SelectItem>
+                <SelectItem value="CR80 Card">CR80 ID Card (86×54mm)</SelectItem>
                 <SelectItem value="Custom">Custom</SelectItem>
               </SelectContent>
             </Select>

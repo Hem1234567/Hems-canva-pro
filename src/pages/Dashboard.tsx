@@ -12,6 +12,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { designCategories, DesignCategory } from '@/data/designCategories';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { LucideIcon } from 'lucide-react';
+import { BarcodeGeneratorDialog } from '@/components/editor/BarcodeGeneratorDialog';
 
 const iconMap: Record<string, LucideIcon> = {
   Presentation, Smartphone, Image, CreditCard, Tag, BadgeCheck, Globe, PenTool,
@@ -42,6 +43,7 @@ const Dashboard = () => {
   const [customW, setCustomW] = useState(800);
   const [customH, setCustomH] = useState(600);
   const [searchQuery, setSearchQuery] = useState('');
+  const [barcodeDialogOpen, setBarcodeDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate('/auth?mode=login', { replace: true });
@@ -75,6 +77,12 @@ const Dashboard = () => {
   };
 
   const handleCategorySelect = (cat: DesignCategory) => {
+    // Labels & Stickers -> open barcode generator dialog
+    if (cat.id === 'label') {
+      setCreateDialogOpen(false);
+      setBarcodeDialogOpen(true);
+      return;
+    }
     if (cat.id === 'custom') {
       setSelectedCategory(cat);
       return;
@@ -207,7 +215,15 @@ const Dashboard = () => {
               {designCategories.filter(c => c.id !== 'custom').map(cat => (
                 <button
                   key={cat.id}
-                  onClick={() => { setSelectedCategory(null); handleCategorySelect(cat); setCreateDialogOpen(true); }}
+                  onClick={() => {
+                    setSelectedCategory(null);
+                    if (cat.id === 'label') {
+                      setBarcodeDialogOpen(true);
+                    } else {
+                      handleCategorySelect(cat);
+                      setCreateDialogOpen(true);
+                    }
+                  }}
                   className="text-left border border-border rounded-xl p-4 sm:p-5 bg-card hover:border-primary/50 hover:shadow-md transition-all group"
                 >
                   {(() => { const Icon = iconMap[cat.iconName]; return Icon ? <Icon className="w-7 h-7 sm:w-8 sm:h-8 mb-2 text-primary" /> : null; })()}
@@ -271,6 +287,9 @@ const Dashboard = () => {
           </>
         )}
       </main>
+
+      {/* Barcode Generator Dialog */}
+      <BarcodeGeneratorDialog open={barcodeDialogOpen} onOpenChange={setBarcodeDialogOpen} />
 
       {/* Create Design Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={(v) => { setCreateDialogOpen(v); if (!v) setSelectedCategory(null); }}>

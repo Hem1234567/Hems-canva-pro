@@ -124,6 +124,12 @@ const RightPanel = () => {
     update({ fontFamily: font });
   };
 
+  const getSafeColor = (c: string | undefined): string => {
+    if (!c) return '#000000';
+    if (c.startsWith('#') && (c.length === 7 || c.length === 9)) return c.slice(0, 7);
+    return '#000000';
+  };
+
   return (
     <aside className="w-[300px] border-l border-border bg-card p-4 shrink-0 overflow-y-auto h-full max-h-full">
       <div className="flex items-center justify-between mb-4">
@@ -249,11 +255,11 @@ const RightPanel = () => {
           <div className="flex items-center gap-3">
             <div>
               <Label className="text-xs text-muted-foreground">Fill</Label>
-              <input type="color" value={el.fill} onChange={e => update({ fill: e.target.value })} className="w-8 h-8 rounded border border-border cursor-pointer mt-1" />
+              <input type="color" value={getSafeColor(el.fill)} onChange={e => update({ fill: e.target.value })} className="w-8 h-8 rounded border border-border cursor-pointer mt-1" />
             </div>
             <div>
               <Label className="text-xs text-muted-foreground">Stroke</Label>
-              <input type="color" value={el.stroke || '#000000'} onChange={e => update({ stroke: e.target.value })} className="w-8 h-8 rounded border border-border cursor-pointer mt-1" />
+              <input type="color" value={getSafeColor(el.stroke || '#000000')} onChange={e => update({ stroke: e.target.value })} className="w-8 h-8 rounded border border-border cursor-pointer mt-1" />
             </div>
             <div className="flex-1">
               <Field label="Stroke W" value={el.strokeWidth} onChange={v => update({ strokeWidth: v })} />

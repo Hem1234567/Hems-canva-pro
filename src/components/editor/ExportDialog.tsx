@@ -1,5 +1,5 @@
 import { useState, useRef, useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -233,7 +233,7 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
     return serials;
   };
 
-  const renderLabelImage = async (serial: string, csvRow?: Record<string, string>, skipVariableReplace = false): Promise<string> => {
+  const renderLabelImage = async (serial: string, csvRow?: Record<string, string>, skipVariableReplace = false, toJpeg = false): Promise<string> => {
     // Keep the same coordinate system as DesignCanvas (mm -> px scale factor 3)
     const renderScale = 3;
     const pixelW = canvasWidth * renderScale;
@@ -370,7 +370,10 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
 
     layer.batchDraw();
     await new Promise(r => setTimeout(r, 50));
-    const dataUrl = offStage.toDataURL({ pixelRatio: 2 });
+    const dataUrl = offStage.toDataURL({ 
+      pixelRatio: 2,
+      ...(toJpeg ? { mimeType: 'image/jpeg', quality: 0.95 } : {})
+    });
     offStage.destroy();
     document.body.removeChild(container);
     return dataUrl;
@@ -453,13 +456,13 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
 
       if (exportMode === 'single') {
         setProgressLabel('Rendering label...');
-        const dataUrl = await renderLabelImage('', undefined, true);
+        const dataUrl = await renderLabelImage('', undefined, true, true);
         for (let i = 0; i < stickersPerPage; i++) {
           const col = i % cols;
           const row = Math.floor(i / cols);
           const x = marginX + col * (stickerW + gapX);
           const y = marginY + row * (stickerH + gapY);
-          pdf.addImage(dataUrl, 'PNG', x - appliedBleed, y - appliedBleed, stickerW + appliedBleed * 2, stickerH + appliedBleed * 2);
+          pdf.addImage(dataUrl, 'JPEG', x - appliedBleed, y - appliedBleed, stickerW + appliedBleed * 2, stickerH + appliedBleed * 2);
           if (showCropMarks) drawCropMarks(pdf, x, y, stickerW, stickerH, appliedBleed);
         }
         setProgress(100);
@@ -480,8 +483,8 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
 
           setProgressLabel(`Generating ${serials[s]} (${s + 1}/${totalSerials})`);
           const csvRow = csvRows.length > 0 ? csvRows[s] : undefined;
-          const labelImage = await renderLabelImage(serials[s], csvRow);
-          pdf.addImage(labelImage, 'PNG', x - appliedBleed, y - appliedBleed, stickerW + appliedBleed * 2, stickerH + appliedBleed * 2);
+          const labelImage = await renderLabelImage(serials[s], csvRow, false, true);
+          pdf.addImage(labelImage, 'JPEG', x - appliedBleed, y - appliedBleed, stickerW + appliedBleed * 2, stickerH + appliedBleed * 2);
           if (showCropMarks) drawCropMarks(pdf, x, y, stickerW, stickerH, appliedBleed);
           stickerIdx++;
           setProgress(Math.round(((s + 1) / totalSerials) * 100));
@@ -518,6 +521,7 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Export Labels</DialogTitle>
+          <DialogDescription className="sr-only">Configure export options for your labels.</DialogDescription>
         </DialogHeader>
 
         <Tabs value={exportMode} onValueChange={v => setExportMode(v as 'single' | 'bulk')}>

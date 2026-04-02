@@ -8,6 +8,7 @@ import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Editor from "./pages/Editor";
+import BarcodePrintPage from "./pages/BarcodePrintPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/editor/:projectId" element={<Editor />} />
+            <Route path="/barcode-print" element={<BarcodePrintPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

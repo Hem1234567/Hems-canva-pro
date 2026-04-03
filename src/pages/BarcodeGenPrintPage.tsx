@@ -37,7 +37,6 @@ function BarcodeItem({
   height,
   width,
   fixedWidth,
-  barWidth,
   fontSize,
   quietZone,
   unit,
@@ -49,7 +48,6 @@ function BarcodeItem({
   height: number;
   width: number;
   fixedWidth: boolean;
-  barWidth: number;
   fontSize: number;
   quietZone: boolean;
   unit: string;
@@ -57,34 +55,31 @@ function BarcodeItem({
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Screen-pixel sizes for JsBarcode (so it renders at correct density on screen)
-  const heightPx   = toScreenPx(height,   unit);
-  const barWidthPx = toScreenPx(barWidth, unit);
-  const fontSizePx = toScreenPx(fontSize, unit);
-
   useEffect(() => {
     if (!canvasRef.current) return;
     try {
+      // Always render at a fixed good quality (2px bar, 80px height base).
+      // The container CSS handles the physical print size via mm/in units.
       JsBarcode(canvasRef.current, value, {
         format: barcodeType === 'qr' ? 'CODE128' : barcodeType,
         displayValue: showText,
-        height: Math.max(heightPx, 20),
-        width: Math.max(barWidthPx, 1),
-        margin: quietZone ? 8 : 2,
-        fontSize: Math.max(fontSizePx, 10),
+        height: 80,
+        width: 2,
+        margin: quietZone ? 10 : 4,
+        fontSize: showText ? 14 : 0,
         valid: () => {},
       });
-      // Scale canvas to fill the container (CSS handles physical mm/inch sizing)
-      canvasRef.current.style.width  = '100%';
-      canvasRef.current.style.height = 'auto';
-    } catch {
-      /* invalid barcode value – canvas stays blank */
+      // Reset any inline sizing so canvas renders at its natural pixel size
+      canvasRef.current.style.width  = '';
+      canvasRef.current.style.height = '';
+    } catch (e) {
+      console.error('BarcodeItem render error:', e, 'value:', value);
     }
-  }, [value, barcodeType, showText, heightPx, barWidthPx, fontSizePx, quietZone]);
+  }, [value, barcodeType, showText, quietZone]);
 
-  // Physical CSS size for the container — browser converts mm/inch to correct print size
-  const cssW = fixedWidth ? toCss(width, unit) : '100%';
-  const cssH = toCss(height * 1.4, unit); // ×1.4 to account for text label below bars
+  // Physical CSS dimensions — browser maps mm/in → exact paper size on print
+  const cssW = fixedWidth && width > 0 ? toCss(width, unit) : '100%';
+  const cssH = toCss(Math.max(height, 10), unit);
 
   return (
     <div
@@ -100,9 +95,11 @@ function BarcodeItem({
         width: cssW,
         minHeight: cssH,
         boxSizing: 'border-box',
+        overflow: 'hidden',
       }}
     >
-      <canvas ref={canvasRef} style={{ display: 'block', width: '100%', height: 'auto' }} />
+      {/* maxWidth keeps the barcode inside the cell; no stretching */}
+      <canvas ref={canvasRef} style={{ display: 'block', maxWidth: '100%' }} />
     </div>
   );
 }
@@ -326,13 +323,16 @@ export default function BarcodeGenPrintPage() {
           {pageBreakPerBarcode ? (
             // One barcode per page (ignores columns/rows)
             values.map((val, i) => (
-              <div key={i} className="page-block" style={{ pageBreakAfter: 'always' }}>
+              <div key={i} className="page-block" style={{ pageBreakAfter: i < values.length - 1 ? 'always' : 'auto' }}>
                 <BarcodeItem
                   value={val} barcodeType={barcodeType} showText={showText}
                   height={height} width={width} fixedWidth={fixedWidth}
-                  barWidth={barWidth} fontSize={fontSize} unit={unit}
+                  fontSize={fontSize} unit={unit}
                   quietZone={quietZone} itemPadding={padding}
                 />
+                {showPageNo && (
+                  <div className="page-footer">Barcode {i + 1} of {values.length}</div>
+                )}
               </div>
             ))
           ) : (
@@ -346,7 +346,7 @@ export default function BarcodeGenPrintPage() {
                     <BarcodeItem
                       key={idx} value={val} barcodeType={barcodeType} showText={showText}
                       height={height} width={width} fixedWidth={fixedWidth}
-                      barWidth={barWidth} fontSize={fontSize} unit={unit}
+                      fontSize={fontSize} unit={unit}
                       quietZone={quietZone} itemPadding={padding}
                     />
                   ))}

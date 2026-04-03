@@ -60,6 +60,7 @@ export default function BarcodePrintPage() {
   const [padding, setPadding] = useState(25);
   const [rowsPerPage, setRowsPerPage] = useState(6);
   const [showPageNo, setShowPageNo] = useState(true);
+  const [isDuplicate, setIsDuplicate] = useState(false);
   const [showNav, setShowNav] = useState(true);
 
   if (!state) {
@@ -176,6 +177,8 @@ export default function BarcodePrintPage() {
           text-align: left;
         }
         .link-item:hover { background: #f3f4f6; }
+        .link-item.active { background: #e0e7ff; color: #4338ca; font-weight: 600; }
+        .link-item.active:hover { background: #c7d2fe; }
 
         .checkbox-row { display: flex; align-items: center; gap: 8px; padding: 4px 8px; }
         .checkbox-row input { accent-color: #2563eb; }
@@ -290,36 +293,43 @@ export default function BarcodePrintPage() {
           {/* Columns */}
           <div className="section-group">
             <div className="section-label">Change display</div>
-            <button className="link-item" onClick={() => setColumns(1)}>to 1 column</button>
-            <button className="link-item" onClick={() => setColumns(2)}>to 2 columns</button>
-            <button className="link-item" onClick={() => setColumns(3)}>to 3 columns</button>
+            <button className={`link-item ${columns === 1 ? 'active' : ''}`} onClick={() => setColumns(1)}>to 1 column</button>
+            <button className={`link-item ${columns === 2 ? 'active' : ''}`} onClick={() => setColumns(2)}>to 2 columns</button>
+            <button className={`link-item ${columns === 3 ? 'active' : ''}`} onClick={() => setColumns(3)}>to 3 columns</button>
           </div>
 
           {/* Padding */}
           <div className="section-group">
             <div className="section-label">Padding</div>
-            <button className="link-item" onClick={() => setPadding(5)}>small padding</button>
-            <button className="link-item" onClick={() => setPadding(25)}>medium padding</button>
-            <button className="link-item" onClick={() => setPadding(50)}>big padding</button>
-            <button className="link-item" onClick={() => setPadding(0)}>no padding</button>
+            <button className={`link-item ${padding === 5 ? 'active' : ''}`} onClick={() => setPadding(5)}>small padding</button>
+            <button className={`link-item ${padding === 25 ? 'active' : ''}`} onClick={() => setPadding(25)}>medium padding</button>
+            <button className={`link-item ${padding === 50 ? 'active' : ''}`} onClick={() => setPadding(50)}>big padding</button>
+            <button className={`link-item ${padding === 0 ? 'active' : ''}`} onClick={() => setPadding(0)}>no padding</button>
           </div>
 
           {/* Page numbers toggle */}
           <div className="section-group">
             <div className="section-label">Page numbers</div>
-            <button className="link-item" onClick={() => setShowPageNo(true)}>On</button>
-            <button className="link-item" onClick={() => setShowPageNo(false)}>Off</button>
+            <button className={`link-item ${showPageNo === true ? 'active' : ''}`} onClick={() => setShowPageNo(true)}>On</button>
+            <button className={`link-item ${showPageNo === false ? 'active' : ''}`} onClick={() => setShowPageNo(false)}>Off</button>
+          </div>
+
+          {/* Duplicate Barcodes toggle */}
+          <div className="section-group">
+            <div className="section-label">Duplicate Barcodes</div>
+            <button className={`link-item ${isDuplicate === true ? 'active' : ''}`} onClick={() => setIsDuplicate(true)}>On</button>
+            <button className={`link-item ${isDuplicate === false ? 'active' : ''}`} onClick={() => setIsDuplicate(false)}>Off</button>
           </div>
 
           {/* Rows per page */}
           <div className="section-group">
             <div className="section-label">Rows per page</div>
-            <button className="link-item" onClick={() => setRowsPerPage(2)}>2 rows</button>
-            <button className="link-item" onClick={() => setRowsPerPage(3)}>3 rows</button>
-            <button className="link-item" onClick={() => setRowsPerPage(4)}>4 rows</button>
-            <button className="link-item" onClick={() => setRowsPerPage(5)}>5 rows</button>
-            <button className="link-item" onClick={() => setRowsPerPage(6)}>6 rows</button>
-            <button className="link-item" onClick={() => setRowsPerPage(7)}>7 rows</button>
+            <button className={`link-item ${rowsPerPage === 2 ? 'active' : ''}`} onClick={() => setRowsPerPage(2)}>2 rows</button>
+            <button className={`link-item ${rowsPerPage === 3 ? 'active' : ''}`} onClick={() => setRowsPerPage(3)}>3 rows</button>
+            <button className={`link-item ${rowsPerPage === 4 ? 'active' : ''}`} onClick={() => setRowsPerPage(4)}>4 rows</button>
+            <button className={`link-item ${rowsPerPage === 5 ? 'active' : ''}`} onClick={() => setRowsPerPage(5)}>5 rows</button>
+            <button className={`link-item ${rowsPerPage === 6 ? 'active' : ''}`} onClick={() => setRowsPerPage(6)}>6 rows</button>
+            <button className={`link-item ${rowsPerPage === 7 ? 'active' : ''}`} onClick={() => setRowsPerPage(7)}>7 rows</button>
           </div>
 
           {/* Download ZIP */}
@@ -361,13 +371,21 @@ export default function BarcodePrintPage() {
                 }}
               >
                 {pageItems.map((val) => (
-                  <div key={val} style={{ textAlign: 'center' }}>
+                  <div key={val} style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: isDuplicate ? '12px' : '0' }}>
                     <BarcodeImage
                       value={val}
                       barcodeType={barcodeType}
                       showText={showText}
                       height={height}
                     />
+                    {isDuplicate && (
+                      <BarcodeImage
+                        value={val}
+                        barcodeType={barcodeType}
+                        showText={showText}
+                        height={height}
+                      />
+                    )}
                   </div>
                 ))}
               </div>

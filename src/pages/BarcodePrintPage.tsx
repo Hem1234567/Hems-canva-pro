@@ -1,6 +1,8 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useState, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import JsBarcode from 'jsbarcode';
+import QRCode from 'qrcode';
+import Konva from 'konva';
 
 /* ── helpers ── */
 function generateValues(
@@ -16,387 +18,334 @@ function generateValues(
   return vals;
 }
 
-function BarcodeImage({
-  value,
-  barcodeType,
-  showText,
-  height,
-}: {
-  value: string;
-  barcodeType: string;
-  showText: boolean;
-  height: number;
-}) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  const draw = () => {
-    if (!canvasRef.current) return;
-    try {
-      JsBarcode(canvasRef.current, value, {
-        format: barcodeType,
-        displayValue: showText,
-        height: Math.max(height * 3, 60),
-        margin: 8,
-        fontSize: 14,
-        valid: () => {},
-      });
-    } catch {
-      /* invalid barcode value – canvas stays blank */
-    }
-  };
-
-  return (
-    <div className="barcode-item" id="paddingchanging">
-      <canvas ref={canvasRef} style={{ maxWidth: '100%' }} onLoad={draw} ref={(el) => { if (el) { (canvasRef as any).current = el; draw(); } }} />
-    </div>
-  );
-}
-
-/* ── main page ── */
 export default function BarcodePrintPage() {
   const { state } = useLocation() as { state: any };
   const navigate = useNavigate();
   const [columns, setColumns] = useState(3);
   const [padding, setPadding] = useState(25);
-  const [rowsPerPage, setRowsPerPage] = useState(6);
-  const [showPageNo, setShowPageNo] = useState(true);
-  const [isDuplicate, setIsDuplicate] = useState(false);
-  const [showNav, setShowNav] = useState(true);
+  const [images, setImages] = useState<string[]>([]);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [pageBreak, setPageBreak] = useState(false);
+
+  // Read state from Label Maker or Fallback
+  const mode = state?.mode || 'basic';
+  const elements = state?.elements || [];
+  const canvasWidth = state?.canvasWidth || 100;
+  const canvasHeight = state?.canvasHeight || 50;
+  const canvasBg = state?.canvasBg || '#ffffff';
+  const barcodeType = state?.barcodeType || 'CODE128';
+  
+  const serialStart = state?.serialStart;
+  const serialEnd = state?.serialEnd;
+  const serialPrefix = state?.serialPrefix || '';
+  const singleValue = state?.singleValue || '';
+
+  useEffect(() => {
+    if (!state) return;
+    
+    let isCancelled = false;
+    
+    const generateAllImages = async () => {
+      setIsGenerating(true);
+      try {
+        const isSerial = serialStart !== null && serialEnd !== null && serialStart !== undefined;
+        let valuesToGenerate: string[] = [];
+        
+        if (isSerial) {
+          valuesToGenerate = generateValues(serialStart, serialEnd, serialPrefix || '', '');
+        } else {
+          valuesToGenerate = singleValue ? singleValue.split(/[\n,]+/).map((v: string) => v.trim()).filter(Boolean) : ['1234'];
+        }
+
+        const generatedImages: string[] = [];
+
+        if (mode === 'label-maker') {
+          // Keep the scaling native so it renders crisp
+          const renderScale = 3;
+          const pixelW = canvasWidth * renderScale;
+          const pixelH = canvasHeight * renderScale;
+          
+          const container = document.createElement('div');
+          container.style.position = 'absolute';
+          container.style.left = '-9999px';
+          document.body.appendChild(container);
+
+          for (const val of valuesToGenerate) {
+            if (isCancelled) break;
+            
+            const offStage = new Konva.Stage({ container, width: pixelW, height: pixelH });
+            const layer = new Konva.Layer();
+            offStage.add(layer);
+
+            layer.add(new Konva.Rect({ x: 0, y: 0, width: pixelW, height: pixelH, fill: canvasBg || '#FFFFFF' }));
+
+            for (const el of elements) {
+              const rawText = el.text || '';
+              const text = rawText.replace(/\{\{serial\}\}/g, val);
+              const barcodeValue = text.length > 0 ? text : val;
+
+              // Render standard properties
+              switch (el.type) {
+                case 'text':
+                  layer.add(new Konva.Text({
+                    x: el.x, y: el.y, text, fontSize: el.fontSize || 18,
+                    fontFamily: el.fontFamily || 'Inter', fontStyle: el.fontStyle || 'normal',
+                    fill: el.fill, width: el.width, rotation: el.rotation, opacity: el.opacity,
+                    letterSpacing: el.letterSpacing || 0, align: el.align || 'left',
+                  }));
+                  break;
+                case 'rect':
+                  layer.add(new Konva.Rect({
+                    x: el.x, y: el.y, width: el.width, height: el.height,
+                    fill: el.fill, stroke: el.stroke, strokeWidth: el.strokeWidth,
+                    rotation: el.rotation, opacity: el.opacity, cornerRadius: el.cornerRadius || 0,
+                  }));
+                  break;
+                case 'circle':
+                  layer.add(new Konva.Circle({
+                    x: el.x + el.width / 2, y: el.y + el.height / 2, radius: el.width / 2,
+                    fill: el.fill, stroke: el.stroke, strokeWidth: el.strokeWidth,
+                    rotation: el.rotation, opacity: el.opacity,
+                  }));
+                  break;
+                case 'barcode': {
+                  try {
+                    const canvas = document.createElement('canvas');
+                    JsBarcode(canvas, barcodeValue, {
+                      format: el.barcodeFormat || barcodeType || 'CODE128',
+                      width: 2, height: Math.max(30, el.height - (el.fontSize || 14) - 10),
+                      displayValue: el.showText !== false, fontSize: el.fontSize || 14,
+                      textMargin: 4, margin: 3, background: '#FFFFFF', lineColor: el.fill || '#000000',
+                    });
+                    const img = new window.Image();
+                    img.src = canvas.toDataURL();
+                    await new Promise<void>(resolve => { img.onload = () => resolve(); });
+                    layer.add(new Konva.Image({ x: el.x, y: el.y, width: el.width, height: el.height, image: img, rotation: el.rotation, opacity: el.opacity }));
+                  } catch { /* skip invalid */ }
+                  break;
+                }
+                case 'qrcode': {
+                  try {
+                    const qrDataUrl = await QRCode.toDataURL(barcodeValue, { width: Math.max(el.width, el.height) * 2, margin: 2 });
+                    const img = new window.Image();
+                    img.src = qrDataUrl;
+                    await new Promise<void>(resolve => { img.onload = () => resolve(); });
+                    layer.add(new Konva.Image({ x: el.x, y: el.y, width: el.width, height: el.height, image: img, rotation: el.rotation, opacity: el.opacity }));
+                  } catch { /* skip */ }
+                  break;
+                }
+                case 'image': {
+                  if (el.src) {
+                    try {
+                      const img = new window.Image();
+                      img.crossOrigin = 'anonymous'; img.src = el.src;
+                      await new Promise<void>(resolve => { img.onload = () => resolve(); img.onerror = () => resolve(); });
+                      layer.add(new Konva.Image({ x: el.x, y: el.y, width: el.width, height: el.height, image: img, rotation: el.rotation, opacity: el.opacity }));
+                    } catch { /* skip */ }
+                  }
+                  break;
+                }
+              }
+            }
+
+            layer.batchDraw();
+            await new Promise(r => setTimeout(r, 10)); // tiny yield
+            generatedImages.push(offStage.toDataURL({ pixelRatio: 2 }));
+            offStage.destroy();
+          }
+          document.body.removeChild(container);
+        } else {
+          // SIMPLE MODE FLAG (Just generate basic barcodes)
+          for (const val of valuesToGenerate) {
+             const canvas = document.createElement('canvas');
+             try {
+                JsBarcode(canvas, val, { format: barcodeType, height: 60, displayValue: true });
+                generatedImages.push(canvas.toDataURL());
+             } catch {
+                generatedImages.push(''); // blank on error
+             }
+          }
+        }
+
+        if (!isCancelled) {
+          setImages(generatedImages);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        if (!isCancelled) setIsGenerating(false);
+      }
+    };
+    
+    generateAllImages();
+    return () => { isCancelled = true; };
+  }, [state]);
 
   if (!state) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
-          <p className="text-lg mb-4">No barcode data found.</p>
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="px-4 py-2 bg-blue-600 text-white rounded"
-          >
-            Go to Dashboard
-          </button>
+          <p className="text-lg mb-4">No label data found.</p>
+          <button onClick={() => navigate('/dashboard')} className="px-4 py-2 bg-blue-600 text-white rounded">Go to Dashboard</button>
         </div>
       </div>
     );
   }
 
-  const {
-    barcodeType = 'CODE128',
-    startVal = 10000,
-    endVal = 10005,
-    prefix = '',
-    suffix = '',
-    showText = true,
-    height = 25,
-  } = state;
-
-  const values = generateValues(startVal, endVal, prefix, suffix);
-
-  // Split values into pages
-  const itemsPerPage = columns * rowsPerPage;
-  const pages: string[][] = [];
-  for (let i = 0; i < values.length; i += itemsPerPage) {
-    pages.push(values.slice(i, i + itemsPerPage));
-  }
-  const totalPages = pages.length;
-
-  const handlePrint = () => window.print();
-  const handleReturn = () => navigate('/dashboard');
-
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
         body { font-family: 'Inter', sans-serif; background: #f5f5f5; }
-
-        .print-layout {
-          display: flex;
-          min-height: 100vh;
-        }
-
-        /* ── left sidebar ── */
-        .sidebar {
-          width: 280px;
-          min-width: 280px;
-          background: #fff;
-          border-right: 1px solid #e5e7eb;
-          padding: 20px 16px;
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          overflow-y: auto;
-        }
-
-        .sidebar-title {
-          font-size: 18px;
-          font-weight: 700;
-          margin-bottom: 12px;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          color: #111827;
-        }
-
-        .sidebar-btn {
-          display: block;
-          width: 100%;
-          padding: 10px 14px;
-          border-radius: 8px;
-          border: none;
-          cursor: pointer;
-          font-size: 14px;
-          font-weight: 500;
-          text-align: left;
-          transition: opacity .15s, background .15s;
-        }
-
-        .btn-primary   { background: #2563eb; color: #fff; }
-        .btn-primary:hover   { opacity: .88; }
-        .btn-warning   { background: #f59e0b; color: #fff; }
-        .btn-warning:hover   { opacity: .88; }
-        .btn-ghost     { background: transparent; color: #374151; border: 1px solid #e5e7eb; }
-        .btn-ghost:hover     { background: #f3f4f6; }
-        .btn-toggle    { background: transparent; color: #374151; font-weight: 600; border: none; cursor: pointer; width: 100%; text-align: left; padding: 8px 0; font-size: 13px; }
-
-        .section-group { margin-top: 8px; border-top: 1px solid #e5e7eb; padding-top: 8px; }
-        .section-label { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: #6b7280; margin-bottom: 6px; }
-
-        .link-item {
-          display: block;
-          padding: 5px 8px;
-          border-radius: 6px;
-          font-size: 13px;
-          color: #374151;
-          text-decoration: none;
-          cursor: pointer;
-          background: none;
-          border: none;
-          width: 100%;
-          text-align: left;
-        }
-        .link-item:hover { background: #f3f4f6; }
-        .link-item.active { background: #e0e7ff; color: #4338ca; font-weight: 600; }
-        .link-item.active:hover { background: #c7d2fe; }
-
-        .checkbox-row { display: flex; align-items: center; gap: 8px; padding: 4px 8px; }
-        .checkbox-row input { accent-color: #2563eb; }
-        .checkbox-row label { font-size: 13px; color: #374151; cursor: pointer; }
-
-        /* ── main content ── */
-        .barcode-main {
-          flex: 1;
-          padding: 24px;
-          overflow-y: auto;
-          background: #fff;
-        }
-
-        .barcode-main h1 { font-size: 22px; font-weight: 700; color: #111827; margin-bottom: 4px; }
-        .barcode-main h5 { font-size: 14px; color: #6b7280; margin-bottom: 16px; }
-
-        .barcodes-grid {
+        .print-layout { display: flex; min-height: 100vh; }
+        
+        /* Sidebar styling to match the Bootstrap snippet */
+        .sidebar { width: 280px; min-width: 280px; background: #f8f9fa; border-right: 1px solid #dee2e6; padding: 1rem; overflow-y: auto; }
+        .sidebar .btn { display: inline-block; font-weight: 400; text-align: center; text-decoration: none; vertical-align: middle; cursor: pointer; user-select: none; padding: .375rem .75rem; font-size: 1rem; border-radius: .25rem; transition: color .15s,background-color .15s,border-color .15s; border: 1px solid transparent; width: 100%; white-space: normal; line-height: 1.2;}
+        .btn-primary { color: #fff; background-color: #0d6efd; border-color: #0d6efd; }
+        .btn-primary:hover { background-color: #0b5ed7; border-color: #0a58ca; }
+        .btn-warning { color: #000; background-color: #ffc107; border-color: #ffc107; }
+        .btn-warning:hover { background-color: #ffca2c; border-color: #ffc720; }
+        .btn-toggle { background-color: transparent; border: 0; color: rgba(0,0,0,.65); text-align: left; padding: .25rem .5rem; font-weight: 600; }
+        .btn-toggle:hover { color: rgba(0,0,0,.85); background-color: #e2e3e5; }
+        
+        .list-unstyled { padding-left: 0; list-style: none; }
+        .pb-3 { padding-bottom: 1rem; }
+        .mb-3 { margin-bottom: 1rem; }
+        .mb-5 { margin-bottom: 3rem; }
+        .mb-1 { margin-bottom: .25rem; }
+        .gap-2 { gap: .5rem; }
+        .d-grid { display: grid; }
+        .fw-normal { font-weight: 400; }
+        .small { font-size: .875em; }
+        .link-dark { color: #212529; text-decoration: none; display: block; padding: .1875rem .5rem;}
+        .link-dark:hover { color: #1e2125; background-color: #e2e3e5; border-radius: .25rem;}
+        
+        .section-box { margin-bottom: 4px; }
+        .collapse-inner { padding-left: 1.25rem; margin-top: 0.25rem; }
+        
+        /* Main Content */
+        .barcode-main { flex: 1; padding: 24px; overflow-y: auto; background: #fff; }
+        .page-block { margin-bottom: 30px; }
+        
+        .grid-container {
           display: grid;
-          gap: 20px;
+          /* Default overrides via style prop */
+          overflow: hidden;
         }
 
-        .barcode-item {
+        .label-slot {
           display: flex;
-          flex-direction: column;
           align-items: center;
           justify-content: center;
-          padding: 8px;
-          border: 1px solid #e5e7eb;
-          border-radius: 8px;
           background: #fff;
+          border: 1px dashed #d1d5db; /* subtle helper border */
+          width: 100%;
         }
 
-        /* ── page block ── */
-        .page-block {
-          display: block;
-          padding: 24px 24px 12px 24px;
-          background: #fff;
-          box-sizing: border-box;
+        .label-slot img {
+          max-width: 100%;
+          max-height: 100%;
+          object-fit: contain;
         }
 
-        .page-block + .page-block {
-          margin-top: 32px;
-          border-top: 2px dashed #d1d5db;
-          padding-top: 24px;
-        }
-
-        .page-footer {
-          display: block;
-          margin-top: 14px;
-          padding: 8px 0;
-          text-align: center;
-          font-size: 13px;
-          font-weight: 600;
-          color: #374151;
-          border-top: 1px solid #d1d5db;
-          letter-spacing: 0.04em;
-        }
-
-        /* ── print ── */
-        @page {
-          margin: 0;
-        }
+        /* Print modifications */
         @media print {
-          .sidebar { display: none !important; }
+          .d-print-none { display: none !important; }
           .barcode-main { padding: 0 !important; }
-          body { background: #fff; }
-
-          .page-block {
-            display: block;
-            padding: 6mm 6mm 4mm 6mm;
-            page-break-after: always;
-            min-height: unset;
-          }
-          .page-block:last-child {
-            page-break-after: auto;
-          }
-          .page-block + .page-block {
-            margin-top: 0;
-            border-top: none;
-            padding-top: 6mm;
-          }
-          .page-footer {
-            display: block !important;
-            margin-top: 6mm;
-            padding: 3mm 0;
-            font-size: 10pt;
-            font-weight: 700;
-            color: #000000 !important;
-            border-top: 0.5pt solid #000;
-            text-align: center;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
+          .label-slot { border: none !important; } /* remove dotted lines in print */
+          .page-block { page-break-after: always; padding: 0; margin: 0; }
         }
       `}</style>
-
+      
       <div className="print-layout">
-        {/* ── Sidebar (not printed) ── */}
-        <nav className="sidebar d-print-none">
-          <div className="sidebar-title">
-            <span>⚙</span> Menu
-          </div>
+        {/* Sidebar mimicking User HTML */}
+        <div className="sidebar d-print-none">
+          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/label-maker'); }} className="d-flex align-items-center pb-3 mb-3 link-dark text-decoration-none border-bottom" style={{ borderBottom: '1px solid #dee2e6' }}>
+             <span style={{ fontSize: '1.25rem', fontWeight: 600 }}>⚙ Menu</span>
+          </a>
+          
+          <ul className="list-unstyled ps-0">
+            <li>
+              <div className="d-grid gap-2">
+                <button className="btn btn-primary mb-3" onClick={() => window.print()}>print directly</button>
+                <button className="btn btn-primary mb-3" onClick={() => alert('Download as PDF handled by full export functionality.')}>download as PDF</button>
+                <button className="btn btn-warning mb-5" onClick={() => navigate('/label-maker')}>return to input</button>
+              </div>
+            </li>
+            
+            <li className="mb-1 section-box">
+              <button className="btn btn-toggle w-100" style={{textAlign: 'left'}} >Download ZIP with ...</button>
+              <div className="collapse-inner">
+                <ul className="list-unstyled fw-normal pb-1 small">
+                  <li><a href="#" onClick={e => e.preventDefault()} className="link-dark">... PNG files</a></li>
+                  <li><a href="#" onClick={e => e.preventDefault()} className="link-dark">... JPG files</a></li>
+                  <li><a href="#" onClick={e => e.preventDefault()} className="link-dark">... SVG files</a></li>
+                </ul>
+              </div>
+            </li>
 
-          <button className="sidebar-btn btn-primary" onClick={handlePrint}>
-            🖨 Print directly
-          </button>
+            <li className="mb-1 section-box">
+              <button className="btn btn-toggle w-100" style={{textAlign: 'left'}} >Download PDF with ...</button>
+              <div className="collapse-inner">
+                <ul className="list-unstyled fw-normal pb-1 small">
+                  <li><a href="#" onClick={e => e.preventDefault()} className="link-dark">2 column PDF</a></li>
+                  <li><a href="#" onClick={e => e.preventDefault()} className="link-dark">all Barcodes in one File</a></li>
+                </ul>
+              </div>
+            </li>
 
-          <button className="sidebar-btn btn-warning" onClick={handleReturn}>
-            ← Return to input
-          </button>
+            <li className="mb-1 section-box">
+              <button className="btn btn-toggle w-100" style={{textAlign: 'left'}} >change display ...</button>
+              <div className="collapse-inner">
+                <ul className="list-unstyled fw-normal pb-1 small">
+                  <li><a href="#" onClick={(e) => { e.preventDefault(); setColumns(1); }} className="link-dark">to 1 column</a></li>
+                  <li><a href="#" onClick={(e) => { e.preventDefault(); setColumns(2); }} className="link-dark">to 2 columns</a></li>
+                  <li><a href="#" onClick={(e) => { e.preventDefault(); setColumns(3); }} className="link-dark pb-3">to 3 columns</a></li>
+                  <li><a href="#" onClick={(e) => { e.preventDefault(); setPadding(5); }} className="link-dark">small padding</a></li>
+                  <li><a href="#" onClick={(e) => { e.preventDefault(); setPadding(25); }} className="link-dark">medium padding</a></li>
+                  <li><a href="#" onClick={(e) => { e.preventDefault(); setPadding(50); }} className="link-dark">big padding</a></li>
+                  <li><a href="#" onClick={(e) => { e.preventDefault(); setPadding(0); }} className="link-dark">w/o padding</a></li>
+                </ul>
+              </div>
+            </li>
 
-          {/* Columns */}
-          <div className="section-group">
-            <div className="section-label">Change display</div>
-            <button className={`link-item ${columns === 1 ? 'active' : ''}`} onClick={() => setColumns(1)}>to 1 column</button>
-            <button className={`link-item ${columns === 2 ? 'active' : ''}`} onClick={() => setColumns(2)}>to 2 columns</button>
-            <button className={`link-item ${columns === 3 ? 'active' : ''}`} onClick={() => setColumns(3)}>to 3 columns</button>
-          </div>
-
-          {/* Padding */}
-          <div className="section-group">
-            <div className="section-label">Padding</div>
-            <button className={`link-item ${padding === 5 ? 'active' : ''}`} onClick={() => setPadding(5)}>small padding</button>
-            <button className={`link-item ${padding === 25 ? 'active' : ''}`} onClick={() => setPadding(25)}>medium padding</button>
-            <button className={`link-item ${padding === 50 ? 'active' : ''}`} onClick={() => setPadding(50)}>big padding</button>
-            <button className={`link-item ${padding === 0 ? 'active' : ''}`} onClick={() => setPadding(0)}>no padding</button>
-          </div>
-
-          {/* Page numbers toggle */}
-          <div className="section-group">
-            <div className="section-label">Page numbers</div>
-            <button className={`link-item ${showPageNo === true ? 'active' : ''}`} onClick={() => setShowPageNo(true)}>On</button>
-            <button className={`link-item ${showPageNo === false ? 'active' : ''}`} onClick={() => setShowPageNo(false)}>Off</button>
-          </div>
-
-          {/* Duplicate Barcodes toggle */}
-          <div className="section-group">
-            <div className="section-label">Duplicate Barcodes</div>
-            <button className={`link-item ${isDuplicate === true ? 'active' : ''}`} onClick={() => setIsDuplicate(true)}>On</button>
-            <button className={`link-item ${isDuplicate === false ? 'active' : ''}`} onClick={() => setIsDuplicate(false)}>Off</button>
-          </div>
-
-          {/* Rows per page */}
-          <div className="section-group">
-            <div className="section-label">Rows per page</div>
-            <button className={`link-item ${rowsPerPage === 2 ? 'active' : ''}`} onClick={() => setRowsPerPage(2)}>2 rows</button>
-            <button className={`link-item ${rowsPerPage === 3 ? 'active' : ''}`} onClick={() => setRowsPerPage(3)}>3 rows</button>
-            <button className={`link-item ${rowsPerPage === 4 ? 'active' : ''}`} onClick={() => setRowsPerPage(4)}>4 rows</button>
-            <button className={`link-item ${rowsPerPage === 5 ? 'active' : ''}`} onClick={() => setRowsPerPage(5)}>5 rows</button>
-            <button className={`link-item ${rowsPerPage === 6 ? 'active' : ''}`} onClick={() => setRowsPerPage(6)}>6 rows</button>
-            <button className={`link-item ${rowsPerPage === 7 ? 'active' : ''}`} onClick={() => setRowsPerPage(7)}>7 rows</button>
-          </div>
-
-          {/* Download ZIP */}
-          <div className="section-group">
-            <div className="section-label">Download ZIP with…</div>
-            {['PNG files', 'JPG files', 'GIF files', 'SVG files', 'EPS files'].map(f => (
-              <button key={f} className="link-item" onClick={() => alert('Download functionality requires server-side processing.')}>
-                … {f}
-              </button>
-            ))}
-          </div>
-
-          {/* Download PDF */}
-          <div className="section-group">
-            <div className="section-label">Download PDF with…</div>
-            {['2 column PDF', 'All barcodes in one file', 'One page per barcode', 'Zipped – one PDF per barcode'].map(f => (
-              <button key={f} className="link-item" onClick={() => alert('Download functionality requires server-side processing.')}>
-                {f}
-              </button>
-            ))}
-          </div>
-
-          {/* summary */}
-          <div className="section-group" style={{ fontSize: 12, color: '#9ca3af' }}>
-            {values.length} barcode{values.length !== 1 ? 's' : ''} generated
-            <br />Type: {barcodeType}
-          </div>
-        </nav>
-
-        {/* ── Main barcode area ── */}
-        <main className="barcode-main">
-          {pages.map((pageItems, pageIndex) => (
-            <div key={pageIndex} className="page-block">
-              <div
-                className="barcodes-grid"
-                style={{
-                  gridTemplateColumns: `repeat(${columns}, 1fr)`,
-                  gap: padding,
-                }}
-              >
-                {pageItems.map((val) => (
-                  <div key={val} style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: isDuplicate ? '12px' : '0' }}>
-                    <BarcodeImage
-                      value={val}
-                      barcodeType={barcodeType}
-                      showText={showText}
-                      height={height}
-                    />
-                    {isDuplicate && (
-                      <BarcodeImage
-                        value={val}
-                        barcodeType={barcodeType}
-                        showText={showText}
-                        height={height}
-                      />
-                    )}
-                  </div>
+            <li className="mb-1 section-box">
+              <button className="btn btn-toggle w-100" style={{textAlign: 'left'}} >print directly options</button>
+              <div className="collapse-inner">
+                <ul className="list-unstyled fw-normal pb-1 small">
+                  <li>
+                    <label style={{ display: 'flex', gap: '8px', alignItems:'center', cursor: 'pointer', padding: '4px 8px', fontSize: '.875em' }}>
+                      <input type="checkbox" checked={pageBreak} onChange={(e) => setPageBreak(e.target.checked)} />
+                      one page per barcode
+                    </label>
+                  </li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+        </div>
+        
+        {/* Main rendering area */}
+        <div className="barcode-main">
+          {isGenerating ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#6b7280' }}>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+              <p>Generating high-quality labels...</p>
+            </div>
+          ) : (
+            <div className="page-block">
+              <div className="grid-container" style={{ gridTemplateColumns: pageBreak ? '1fr' : `repeat(${columns}, 1fr)`, gap: `${padding}px` }}>
+                {images.map((src, i) => (
+                   <div key={i} className="label-slot" style={{ pageBreakAfter: pageBreak ? 'always' : 'auto', paddingBottom: pageBreak ? 0 : `${padding}px` }}>
+                     {src ? <img src={src} alt={`Label ${i}`} /> : <span>Error rendering</span>}
+                   </div>
                 ))}
               </div>
-              {showPageNo && (
-                <div className="page-footer">
-                  Page {pageIndex + 1} of {totalPages}
-                </div>
-              )}
             </div>
-          ))}
-        </main>
+          )}
+        </div>
       </div>
     </>
   );

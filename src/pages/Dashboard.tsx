@@ -79,6 +79,10 @@ const Dashboard = () => {
       navigate('/barcode-generator');
       return;
     }
+    if (cat.id === 'label') {
+      navigate('/label-maker');
+      return;
+    }
     if (cat.id === 'custom') {
       setSelectedCategory(cat);
       return;
@@ -215,6 +219,8 @@ const Dashboard = () => {
                     setSelectedCategory(null);
                     if (cat.id === 'barcode-generator') {
                       navigate('/barcode-generator');
+                    } else if (cat.id === 'label') {
+                      navigate('/label-maker');
                     } else {
                       handleCategorySelect(cat);
                       setCreateDialogOpen(true);

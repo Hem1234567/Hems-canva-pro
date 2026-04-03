@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Editor from "./pages/Editor";
 import BarcodePrintPage from "./pages/BarcodePrintPage";
 import BarcodeGeneratorPage from "./pages/BarcodeGeneratorPage";
+import LabelMakerPage from "./pages/LabelMakerPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/editor/:projectId" element={<Editor />} />
             <Route path="/barcode-generator" element={<BarcodeGeneratorPage />} />
             <Route path="/barcode-print" element={<BarcodePrintPage />} />
+            <Route path="/label-maker" element={<LabelMakerPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

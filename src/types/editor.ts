@@ -25,6 +25,7 @@ export interface CanvasElement {
   textDecoration?: string;
   locked?: boolean;
   cornerRadius?: number;
+  showText?: boolean;
 }
 
 export interface EditorState {

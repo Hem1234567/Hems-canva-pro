@@ -19,6 +19,8 @@ import * as XLSX from 'xlsx';
 
 interface ExportDialogProps {
   stageRef: React.RefObject<Konva.Stage>;
+  customTrigger?: React.ReactNode;
+  defaultFormat?: 'pdf' | 'png';
 }
 
 const PAGE_SIZES = {
@@ -36,8 +38,8 @@ const PAGE_SIZES = {
   'Custom': { width: 210, height: 297 },
 };
 
-const ExportDialog = ({ stageRef }: ExportDialogProps) => {
-  const { projectName, canvasWidth, canvasHeight, elements } = useEditor();
+const ExportDialog = ({ stageRef, customTrigger, defaultFormat = 'pdf' }: ExportDialogProps) => {
+  const { projectName, canvasWidth, canvasHeight, elements, canvasBg } = useEditor();
   const [pageSize, setPageSize] = useState<string>('A4');
   const [customW, setCustomW] = useState(210);
   const [customH, setCustomH] = useState(297);
@@ -63,7 +65,7 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
   const [columnMapping, setColumnMapping] = useState<Record<string, string>>({});
   const [fileHeaders, setFileHeaders] = useState<string[]>([]);
   const [uploadedFileName, setUploadedFileName] = useState('');
-  const [exportFormat, setExportFormat] = useState<'pdf' | 'png'>('pdf');
+  const [exportFormat, setExportFormat] = useState<'pdf' | 'png'>(defaultFormat);
   const [bleedMm, setBleedMm] = useState(0);
   const [showCropMarks, setShowCropMarks] = useState(false);
 
@@ -247,7 +249,7 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
     const layer = new Konva.Layer();
     offStage.add(layer);
 
-    layer.add(new Konva.Rect({ x: 0, y: 0, width: pixelW, height: pixelH, fill: '#FFFFFF' }));
+    layer.add(new Konva.Rect({ x: 0, y: 0, width: pixelW, height: pixelH, fill: canvasBg || '#FFFFFF' }));
 
     for (const el of elements) {
       const rawText = el.text || '';
@@ -297,8 +299,10 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
             JsBarcode(canvas, barcodeValue, {
               format: el.barcodeFormat || 'CODE128',
               width: 2,
-              height: Math.max(30, el.height - 20),
-              displayValue: false,
+              height: Math.max(30, el.height - (el.fontSize || 14) - 10),
+              displayValue: el.showText !== false,
+              fontSize: el.fontSize || 14,
+              textMargin: 4,
               margin: 3,
               background: '#FFFFFF',
               lineColor: el.fill || '#000000',
@@ -307,17 +311,8 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
             img.src = canvas.toDataURL();
             await new Promise<void>(resolve => { img.onload = () => resolve(); });
             layer.add(new Konva.Image({
-              x: el.x, y: el.y, width: el.width, height: el.height - 14,
+              x: el.x, y: el.y, width: el.width, height: el.height,
               image: img, rotation: el.rotation, opacity: el.opacity,
-            }));
-            layer.add(new Konva.Text({
-              x: el.x + 4, y: el.y + el.height - 13,
-              text: barcodeValue,
-              fontSize: 9,
-              fontFamily: 'monospace',
-              fill: el.fill || '#000000',
-              rotation: el.rotation,
-              opacity: el.opacity,
             }));
           } catch {
             // skip invalid barcodes
@@ -513,10 +508,12 @@ const ExportDialog = ({ stageRef }: ExportDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90">
-          <Download className="w-4 h-4" />
-          <span className="hidden sm:inline">Export PDF</span>
-        </Button>
+        {customTrigger || (
+          <Button size="sm" className="gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90">
+            <Download className="w-4 h-4" />
+            <span className="hidden sm:inline">Export PDF</span>
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>

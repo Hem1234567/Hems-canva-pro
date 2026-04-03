@@ -21,6 +21,8 @@ interface EditorContextType {
   selectedIds: Set<string>;
   selectedElements: CanvasElement[];
   templateCategory: string | null;
+  canvasBg: string;
+  setCanvasBg: (c: string) => void;
   setTemplateCategory: (cat: string | null) => void;
   zoomToFit: (containerWidth?: number, containerHeight?: number) => void;
   // Multi-page
@@ -33,6 +35,7 @@ interface EditorContextType {
   // Actions
   addElement: (type: ElementType) => void;
   addCustomElement: (overrides: Partial<CanvasElement> & { type: ElementType }) => void;
+  addMultipleCustomElements: (overridesList: (Partial<CanvasElement> & { type: ElementType })[]) => void;
   addImageElement: (src: string) => void;
   selectElement: (id: string | null) => void;
   updateElement: (id: string, updates: Partial<CanvasElement>) => void;
@@ -83,6 +86,7 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
   const [snapEnabled, setSnapEnabled] = useState(true);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [templateCategory, setTemplateCategory] = useState<string | null>(null);
+  const [canvasBg, setCanvasBg] = useState<string>('#FFFFFF');
 
   const zoomToFit = useCallback((containerWidth = 800, containerHeight = 600) => {
     const pixelW = canvasWidth * 3;
@@ -174,10 +178,29 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     const pixelW = canvasWidth * 3;
     const pixelH = canvasHeight * 3;
     const merged = { ...defaults, ...overrides, id: defaults.id };
-    const el = { ...merged, x: (pixelW - merged.width) / 2, y: (pixelH - merged.height) / 2 };
+    const el = { ...merged, x: overrides.x !== undefined ? overrides.x : (pixelW - merged.width) / 2, y: overrides.y !== undefined ? overrides.y : (pixelH - merged.height) / 2 };
     const newElements = [...elements, el];
     setElements(newElements);
     setSelectedId(el.id);
+    pushHistory(newElements);
+  }, [elements, pushHistory, setElements, canvasWidth, canvasHeight]);
+
+  const addMultipleCustomElements = useCallback((overridesList: (Partial<CanvasElement> & { type: ElementType })[]) => {
+    if (overridesList.length === 0) return;
+    const pixelW = canvasWidth * 3;
+    const pixelH = canvasHeight * 3;
+    
+    const newEls = overridesList.map((overrides, i) => {
+      const defaults = createDefaultElement(overrides.type, 0, 0);
+      const merged = { ...defaults, ...overrides, id: `${defaults.id}-${i}` };
+      const overrideX = overrides.x !== undefined ? overrides.x : (pixelW - merged.width) / 2 + (i * 15);
+      const overrideY = overrides.y !== undefined ? overrides.y : (pixelH - merged.height) / 2 + (i * 15);
+      return { ...merged, x: overrideX, y: overrideY };
+    });
+    
+    const newElements = [...elements, ...newEls];
+    setElements(newElements);
+    setSelectedId(newEls[newEls.length - 1].id);
     pushHistory(newElements);
   }, [elements, pushHistory, setElements, canvasWidth, canvasHeight]);
 
@@ -368,9 +391,9 @@ export const EditorProvider = ({ children }: { children: ReactNode }) => {
     <EditorContext.Provider value={{
       elements, selectedId, zoom, canvasWidth, canvasHeight, unit, projectName,
       history, historyIndex, selectedElement, snapEnabled, selectedIds, selectedElements,
-      templateCategory, setTemplateCategory, zoomToFit,
+      templateCategory, setTemplateCategory, canvasBg, setCanvasBg, zoomToFit,
       pages, currentPageIndex, addPage, deletePage, duplicatePage, switchPage, reorderPages,
-      addElement, addCustomElement, addImageElement, selectElement, updateElement, deleteElement,
+      addElement, addCustomElement, addMultipleCustomElements, addImageElement, selectElement, updateElement, deleteElement,
       setZoom: setZoomState, setProjectName, setCanvasSize: (w, h) => { setCanvasWidth(w); setCanvasHeight(h); },
       undo, redo, duplicateElement, moveLayer, loadElements,
       copyElement, pasteElement, setSnapEnabled, reorderElements,

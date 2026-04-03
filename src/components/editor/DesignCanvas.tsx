@@ -14,6 +14,10 @@ export interface DesignCanvasHandle {
   getStage: () => Konva.Stage | null;
 }
 
+export interface DesignCanvasProps {
+  hideWorkspace?: boolean;
+}
+
 const SNAP_THRESHOLD = 6;
 const GRID_SNAP = 15;
 const RULER_SIZE = 24;
@@ -43,9 +47,9 @@ const findSnap = (pos: number, size: number, lines: number[], threshold: number)
   return best;
 };
 
-const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
+const DesignCanvas = forwardRef<DesignCanvasHandle, DesignCanvasProps>(({ hideWorkspace }, ref) => {
   const {
-    elements, selectedId, selectElement, updateElement, zoom, canvasWidth, canvasHeight,
+    elements, selectedId, selectElement, updateElement, zoom, canvasWidth, canvasHeight, canvasBg,
     deleteElement, addImageElement, addCustomElement, snapEnabled, selectedIds, toggleSelectElement, deleteSelected
   } = useEditor();
   const transformerRef = useRef<Konva.Transformer>(null);
@@ -183,13 +187,23 @@ const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
     const scaleY = node.scaleY();
     node.scaleX(1);
     node.scaleY(1);
-    updateElement(id, {
+    
+    const el = elements.find(el => el.id === id);
+    const updates: Partial<CanvasElement> = {
       x: node.x(),
       y: node.y(),
       width: Math.max(5, node.width() * scaleX),
       height: Math.max(5, node.height() * scaleY),
       rotation: node.rotation(),
-    });
+    };
+
+    if (el?.type === 'text') {
+      updates.fontSize = Math.max(8, Math.round((el.fontSize || 16) * scaleY));
+      updates.width = Math.max(10, node.width() * scaleX);
+      updates.height = Math.max(10, node.height() * scaleY);
+    }
+    
+    updateElement(id, updates);
   };
 
   const handleFileDrop = useCallback(async (e: React.DragEvent) => {
@@ -236,15 +250,17 @@ const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
     rulerTicksV.push({ pos: i, label: mm % 10 === 0 ? `${mm}` : '', major: mm % 10 === 0 });
   }
 
+  const currentRulerSize = hideWorkspace ? 0 : RULER_SIZE;
+
   return (
     <div
       ref={containerRef}
-      className={`flex-1 bg-canvas overflow-auto flex flex-col ${dragOver ? 'ring-2 ring-primary ring-inset' : ''}`}
+      className={`flex-1 ${hideWorkspace ? 'bg-transparent' : 'bg-canvas'} overflow-auto flex flex-col ${dragOver ? 'ring-2 ring-primary ring-inset' : ''}`}
       onDragOver={e => { e.preventDefault(); setDragOver(true); }}
       onDragLeave={() => setDragOver(false)}
       onDrop={handleFileDrop}
     >
-      <div className="flex-1 flex items-center justify-center p-8">
+      <div className={`flex-1 flex items-center justify-center ${hideWorkspace ? 'p-2' : 'p-8'}`}>
         <div
           style={{
             transform: `scale(${zoom})`,
@@ -254,52 +270,59 @@ const DesignCanvas = forwardRef<DesignCanvasHandle>((_, ref) => {
         >
           <div className="relative">
             {/* Top ruler */}
-            <div
-              className="absolute bg-muted border-b border-border"
-              style={{ left: RULER_SIZE, top: 0, width: pixelW, height: RULER_SIZE, overflow: 'hidden' }}
-            >
-              <svg width={pixelW} height={RULER_SIZE} className="block">
-                {rulerTicksH.map((t, i) => (
-                  <g key={i}>
-                    <line x1={t.pos} y1={t.major ? 0 : RULER_SIZE / 2} x2={t.pos} y2={RULER_SIZE} stroke="hsl(var(--muted-foreground))" strokeWidth={t.major ? 1 : 0.5} opacity={t.major ? 0.6 : 0.3} />
-                    {t.label && <text x={t.pos + 2} y={10} fontSize={8} fill="hsl(var(--muted-foreground))" opacity={0.7}>{t.label}</text>}
-                  </g>
-                ))}
-              </svg>
-            </div>
+            {!hideWorkspace && (
+              <div
+                className="absolute bg-muted border-b border-border"
+                style={{ left: currentRulerSize, top: 0, width: pixelW, height: currentRulerSize, overflow: 'hidden' }}
+              >
+                <svg width={pixelW} height={currentRulerSize} className="block">
+                  {rulerTicksH.map((t, i) => (
+                    <g key={i}>
+                      <line x1={t.pos} y1={t.major ? 0 : currentRulerSize / 2} x2={t.pos} y2={currentRulerSize} stroke="hsl(var(--muted-foreground))" strokeWidth={t.major ? 1 : 0.5} opacity={t.major ? 0.6 : 0.3} />
+                      {t.label && <text x={t.pos + 2} y={10} fontSize={8} fill="hsl(var(--muted-foreground))" opacity={0.7}>{t.label}</text>}
+                    </g>
+                  ))}
+                </svg>
+              </div>
+            )}
 
             {/* Left ruler */}
-            <div
-              className="absolute bg-muted border-r border-border"
-              style={{ left: 0, top: RULER_SIZE, width: RULER_SIZE, height: pixelH, overflow: 'hidden' }}
-            >
-              <svg width={RULER_SIZE} height={pixelH} className="block">
-                {rulerTicksV.map((t, i) => (
-                  <g key={i}>
-                    <line y1={t.pos} x1={t.major ? 0 : RULER_SIZE / 2} y2={t.pos} x2={RULER_SIZE} stroke="hsl(var(--muted-foreground))" strokeWidth={t.major ? 1 : 0.5} opacity={t.major ? 0.6 : 0.3} />
-                    {t.label && <text x={2} y={t.pos - 2} fontSize={8} fill="hsl(var(--muted-foreground))" opacity={0.7}>{t.label}</text>}
-                  </g>
-                ))}
-              </svg>
-            </div>
+            {!hideWorkspace && (
+              <div
+                className="absolute bg-muted border-r border-border"
+                style={{ left: 0, top: currentRulerSize, width: currentRulerSize, height: pixelH, overflow: 'hidden' }}
+              >
+                <svg width={currentRulerSize} height={pixelH} className="block">
+                  {rulerTicksV.map((t, i) => (
+                    <g key={i}>
+                      <line y1={t.pos} x1={t.major ? 0 : currentRulerSize / 2} y2={t.pos} x2={currentRulerSize} stroke="hsl(var(--muted-foreground))" strokeWidth={t.major ? 1 : 0.5} opacity={t.major ? 0.6 : 0.3} />
+                      {t.label && <text x={2} y={t.pos - 2} fontSize={8} fill="hsl(var(--muted-foreground))" opacity={0.7}>{t.label}</text>}
+                    </g>
+                  ))}
+                </svg>
+              </div>
+            )}
 
             {/* Corner square */}
-            <div className="absolute bg-muted border-b border-r border-border" style={{ left: 0, top: 0, width: RULER_SIZE, height: RULER_SIZE }} />
+            {!hideWorkspace && (
+              <div className="absolute bg-muted border-b border-r border-border" style={{ left: 0, top: 0, width: currentRulerSize, height: currentRulerSize }} />
+            )}
 
             {/* Canvas */}
-            <div className="shadow-lg rounded-sm" style={{ marginLeft: RULER_SIZE, marginTop: RULER_SIZE, width: pixelW, height: pixelH }}>
+            <div className="shadow-lg rounded-sm bg-white" style={{ marginLeft: currentRulerSize, marginTop: currentRulerSize, width: pixelW, height: pixelH }}>
               <Stage
                 ref={stageRef}
                 width={pixelW}
                 height={pixelH}
                 onClick={handleStageClick}
-                style={{ background: '#FFFFFF', borderRadius: '2px' }}
+                style={{ background: '#FFFFFF', borderRadius: '2px', width: '100%', height: '100%' }}
               >
                 <Layer>
-                  {Array.from({ length: Math.floor(pixelW / 30) }).map((_, i) => (
+                  <Rect x={0} y={0} width={pixelW} height={pixelH} fill={canvasBg} listening={false} />
+                  {!hideWorkspace && Array.from({ length: Math.floor(pixelW / 30) }).map((_, i) => (
                     <Line key={`gv-${i}`} points={[i * 30, 0, i * 30, pixelH]} stroke="#f0f0f0" strokeWidth={0.5} />
                   ))}
-                  {Array.from({ length: Math.floor(pixelH / 30) }).map((_, i) => (
+                  {!hideWorkspace && Array.from({ length: Math.floor(pixelH / 30) }).map((_, i) => (
                     <Line key={`gh-${i}`} points={[0, i * 30, pixelW, i * 30]} stroke="#f0f0f0" strokeWidth={0.5} />
                   ))}
 

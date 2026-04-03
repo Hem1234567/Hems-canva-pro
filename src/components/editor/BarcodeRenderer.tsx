@@ -21,8 +21,10 @@ const BarcodeRenderer = ({ element: el, commonProps }: BarcodeRendererProps) => 
       JsBarcode(canvas, el.text || '123456789', {
         format: el.barcodeFormat || 'CODE128',
         width: 2,
-        height: Math.max(30, el.height - 20),
-        displayValue: false,
+        height: Math.max(30, el.height - (el.fontSize || 14) - 10),
+        displayValue: el.showText !== false, // Default to true unless strictly false
+        fontSize: el.fontSize || 14,
+        textMargin: 4,
         margin: 2,
         background: '#FFFFFF',
         lineColor: el.fill || '#000000',
@@ -66,16 +68,7 @@ const BarcodeRenderer = ({ element: el, commonProps }: BarcodeRendererProps) => 
         ref={imageRef}
         image={undefined as any}
         width={el.width}
-        height={el.height - 14}
-        listening={false}
-      />
-      <Text
-        text={el.text || '{{serial}}'}
-        fontSize={9}
-        y={el.height - 13}
-        x={4}
-        fill={el.fill}
-        fontFamily="monospace"
+        height={el.height}
         listening={false}
       />
     </Group>

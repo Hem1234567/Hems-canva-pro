@@ -26,6 +26,7 @@ export default function BarcodePrintPage() {
   const [images, setImages] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [pageBreak, setPageBreak] = useState(false);
+  const [duplicateCopies, setDuplicateCopies] = useState(1);
 
   // Read state from Label Maker or Fallback
   const mode = state?.mode || 'basic';
@@ -52,9 +53,19 @@ export default function BarcodePrintPage() {
         let valuesToGenerate: string[] = [];
         
         if (isSerial) {
-          valuesToGenerate = generateValues(serialStart, serialEnd, serialPrefix || '', '');
+          valuesToGenerate = generateValues(
+            Number(serialStart), 
+            Number(serialEnd), 
+            serialPrefix || '', 
+            ''
+          );
+          if (valuesToGenerate.length === 0) valuesToGenerate = ['1'];
+        } else if (singleValue && singleValue.trim().length > 0) {
+          // Individual mode — each comma/newline entry becomes one label
+          valuesToGenerate = singleValue.split(/[\n,]+/).map((v: string) => v.trim()).filter(Boolean);
         } else {
-          valuesToGenerate = singleValue ? singleValue.split(/[\n,]+/).map((v: string) => v.trim()).filter(Boolean) : ['1234'];
+          // No explicit value — render one copy of the label using the element's stored text
+          valuesToGenerate = ['__USE_ELEMENT_TEXT__'];
         }
 
         const generatedImages: string[] = [];
@@ -81,8 +92,20 @@ export default function BarcodePrintPage() {
 
             for (const el of elements) {
               const rawText = el.text || '';
-              const text = rawText.replace(/\{\{serial\}\}/g, val);
-              const barcodeValue = text.length > 0 ? text : val;
+              const useRawText = val === '__USE_ELEMENT_TEXT__';
+              
+              // Replace {{serial}} and any other {{variable}} with the current value
+              const text = useRawText 
+                ? rawText 
+                : rawText.replace(/\{\{(\w+)\}\}/g, (_: string, varName: string) => {
+                    if (varName === 'serial') return val;
+                    return val;
+                  });
+              
+              // For barcodes: use element's own text → resolved serial → the serial value itself → fallback
+              const barcodeValue = useRawText
+                ? (rawText.trim() || 'SAMPLE')
+                : ((text.trim().length > 0 ? text.trim() : val) || 'SAMPLE');
 
               // Render standard properties
               switch (el.type) {
@@ -110,18 +133,31 @@ export default function BarcodePrintPage() {
                   break;
                 case 'barcode': {
                   try {
-                    const canvas = document.createElement('canvas');
-                    JsBarcode(canvas, barcodeValue, {
-                      format: el.barcodeFormat || barcodeType || 'CODE128',
-                      width: 2, height: Math.max(30, el.height - (el.fontSize || 14) - 10),
-                      displayValue: el.showText !== false, fontSize: el.fontSize || 14,
-                      textMargin: 4, margin: 3, background: '#FFFFFF', lineColor: el.fill || '#000000',
+                    const bCanvas = document.createElement('canvas');
+                    const fmt = el.barcodeFormat || barcodeType || 'CODE128';
+                    const barH = Math.max(30, (el.height || 80) - (el.fontSize || 14) - 10);
+                    JsBarcode(bCanvas, barcodeValue, {
+                      format: fmt,
+                      width: 2,
+                      height: barH,
+                      displayValue: el.showText !== false,
+                      fontSize: el.fontSize || 14,
+                      textMargin: 4,
+                      margin: 3,
+                      background: '#FFFFFF',
+                      lineColor: el.fill || '#000000',
+                      valid: (v: boolean) => { if (!v) console.warn('Invalid barcode value for format', fmt, ':', barcodeValue); },
                     });
                     const img = new window.Image();
-                    img.src = canvas.toDataURL();
-                    await new Promise<void>(resolve => { img.onload = () => resolve(); });
-                    layer.add(new Konva.Image({ x: el.x, y: el.y, width: el.width, height: el.height, image: img, rotation: el.rotation, opacity: el.opacity }));
-                  } catch { /* skip invalid */ }
+                    img.src = bCanvas.toDataURL();
+                    await new Promise<void>(resolve => { img.onload = () => resolve(); img.onerror = () => resolve(); });
+                    layer.add(new Konva.Image({
+                      x: el.x, y: el.y, width: el.width, height: el.height,
+                      image: img, rotation: el.rotation, opacity: el.opacity,
+                    }));
+                  } catch (e) {
+                    console.error('Barcode render error:', e, 'value:', barcodeValue);
+                  }
                   break;
                 }
                 case 'qrcode': {
@@ -324,6 +360,44 @@ export default function BarcodePrintPage() {
                 </ul>
               </div>
             </li>
+
+            <li className="mb-1 section-box">
+              <button className="btn btn-toggle w-100" style={{textAlign: 'left'}} >Duplicate copies ...</button>
+              <div className="collapse-inner">
+                <ul className="list-unstyled fw-normal pb-1 small">
+                  <li style={{ padding: '4px 8px' }}>
+                    <div style={{ display: 'flex', gap: '6px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                      {[1, 2, 3, 4].map(n => (
+                        <button
+                          key={n}
+                          onClick={() => setDuplicateCopies(n)}
+                          style={{
+                            padding: '3px 10px', borderRadius: '6px', border: '1px solid #ced4da',
+                            background: duplicateCopies === n ? '#0d6efd' : '#fff',
+                            color: duplicateCopies === n ? '#fff' : '#212529',
+                            cursor: 'pointer', fontSize: '13px', fontWeight: 500
+                          }}
+                        >
+                          {n}×
+                        </button>
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontSize: '12px', color: '#6c757d' }}>Custom:</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={50}
+                        value={duplicateCopies}
+                        onChange={e => setDuplicateCopies(Math.max(1, parseInt(e.target.value) || 1))}
+                        style={{ width: '60px', padding: '2px 6px', border: '1px solid #ced4da', borderRadius: '4px', fontSize: '13px' }}
+                      />
+                      <span style={{ fontSize: '12px', color: '#6c757d' }}>copies each</span>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </li>
           </ul>
         </div>
         
@@ -337,11 +411,13 @@ export default function BarcodePrintPage() {
           ) : (
             <div className="page-block">
               <div className="grid-container" style={{ gridTemplateColumns: pageBreak ? '1fr' : `repeat(${columns}, 1fr)`, gap: `${padding}px` }}>
-                {images.map((src, i) => (
-                   <div key={i} className="label-slot" style={{ pageBreakAfter: pageBreak ? 'always' : 'auto', paddingBottom: pageBreak ? 0 : `${padding}px` }}>
-                     {src ? <img src={src} alt={`Label ${i}`} /> : <span>Error rendering</span>}
-                   </div>
-                ))}
+                {images.flatMap((src, i) =>
+                  Array.from({ length: duplicateCopies }, (_, d) => (
+                    <div key={`${i}-${d}`} className="label-slot" style={{ pageBreakAfter: pageBreak ? 'always' : 'auto', paddingBottom: pageBreak ? 0 : `${padding}px` }}>
+                      {src ? <img src={src} alt={`Label ${i} copy ${d + 1}`} /> : <span>Error rendering</span>}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           )}

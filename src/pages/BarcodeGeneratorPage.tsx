@@ -32,7 +32,7 @@ export default function BarcodeGeneratorPage() {
   const [dpi, setDpi] = useState('300');
 
   const handleGenerate = () => {
-    navigate('/barcode-print', {
+    navigate('/barcode-gen-print', {
       state: {
         barcodeType,
         startVal: parseInt(startVal) || 1,

@@ -532,31 +532,7 @@ const LabelMakerInner = () => {
               </div>
               
               {/* Output Actions */}
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mt-4">
-                <ExportDialog 
-                  stageRef={stageRef} 
-                  defaultFormat="png"
-                  customTrigger={
-                    <button className="py-4 bg-white/20 hover:bg-white/30 text-white rounded-xl font-medium transition-colors flex flex-col items-center justify-center gap-1 w-full">
-                      <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>PNG
-                    </button>
-                  } 
-                />
-                <ExportDialog 
-                  stageRef={stageRef} 
-                  defaultFormat="pdf"
-                  customTrigger={
-                    <button className="py-4 bg-white/20 hover:bg-white/30 text-white rounded-xl font-medium transition-colors flex flex-col items-center justify-center gap-1 w-full">
-                      <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>PDF
-                    </button>
-                  } 
-                />
-                <button onClick={() => alert("ZPL Export - For bulk printing via PRN format. Full ZPL conversion logic pending.")} className="py-4 bg-white/20 hover:bg-white/30 text-white rounded-xl font-medium transition-colors flex flex-col items-center justify-center gap-1">
-                  <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>ZPL
-                </button>
-                <button onClick={() => alert("TSPL Export - For bulk printing via PRN format. Full TSPL conversion logic pending.")} className="py-4 bg-white/20 hover:bg-white/30 text-white rounded-xl font-medium transition-colors flex flex-col items-center justify-center gap-1">
-                  <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>TSPL
-                </button>
+              <div className="mt-4">
                 <button 
                   onClick={() => navigate('/barcode-print', { 
                     state: { 
@@ -572,9 +548,10 @@ const LabelMakerInner = () => {
                       singleValue: barcodeMode === 'single' ? barcodeValue : null
                     } 
                   })} 
-                  className="py-4 bg-primary hover:bg-primary/90 text-white rounded-xl font-medium transition-colors flex flex-col items-center justify-center gap-1 col-span-2 md:col-span-1"
+                  className="w-full py-4 bg-primary hover:bg-primary/90 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 text-base"
                 >
-                  <svg className="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>Generate
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                  Generate Label
                 </button>
               </div>
             </div>

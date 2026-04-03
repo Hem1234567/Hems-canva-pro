@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Editor from "./pages/Editor";
 import BarcodePrintPage from "./pages/BarcodePrintPage";
+import BarcodeGenPrintPage from "./pages/BarcodeGenPrintPage";
 import BarcodeGeneratorPage from "./pages/BarcodeGeneratorPage";
 import LabelMakerPage from "./pages/LabelMakerPage";
 import NotFound from "./pages/NotFound";
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/editor/:projectId" element={<Editor />} />
             <Route path="/barcode-generator" element={<BarcodeGeneratorPage />} />
+            <Route path="/barcode-gen-print" element={<BarcodeGenPrintPage />} />
             <Route path="/barcode-print" element={<BarcodePrintPage />} />
             <Route path="/label-maker" element={<LabelMakerPage />} />
             <Route path="*" element={<NotFound />} />

@@ -58,7 +58,8 @@ export default function BarcodePrintPage() {
   const navigate = useNavigate();
   const [columns, setColumns] = useState(3);
   const [padding, setPadding] = useState(25);
-  const [pageBreak, setPageBreak] = useState(false);
+  const [rowsPerPage, setRowsPerPage] = useState(6);
+  const [showPageNo, setShowPageNo] = useState(true);
   const [showNav, setShowNav] = useState(true);
 
   if (!state) {
@@ -88,7 +89,14 @@ export default function BarcodePrintPage() {
   } = state;
 
   const values = generateValues(startVal, endVal, prefix, suffix);
-  const columnWidth = columns === 1 ? '100%' : columns === 2 ? '50%' : '33.333%';
+
+  // Split values into pages
+  const itemsPerPage = columns * rowsPerPage;
+  const pages: string[][] = [];
+  for (let i = 0; i < values.length; i += itemsPerPage) {
+    pages.push(values.slice(i, i + itemsPerPage));
+  }
+  const totalPages = pages.length;
 
   const handlePrint = () => window.print();
   const handleReturn = () => navigate('/dashboard');
@@ -200,11 +208,30 @@ export default function BarcodePrintPage() {
           background: #fff;
         }
 
-        .barcode-value {
-          font-size: 11px;
-          color: #374151;
-          margin-top: 4px;
+        /* ── page block ── */
+        .page-block {
+          display: block;
+          padding: 24px 24px 12px 24px;
+          background: #fff;
+          box-sizing: border-box;
+        }
+
+        .page-block + .page-block {
+          margin-top: 32px;
+          border-top: 2px dashed #d1d5db;
+          padding-top: 24px;
+        }
+
+        .page-footer {
+          display: block;
+          margin-top: 14px;
+          padding: 8px 0;
           text-align: center;
+          font-size: 13px;
+          font-weight: 600;
+          color: #374151;
+          border-top: 1px solid #d1d5db;
+          letter-spacing: 0.04em;
         }
 
         /* ── print ── */
@@ -213,8 +240,35 @@ export default function BarcodePrintPage() {
         }
         @media print {
           .sidebar { display: none !important; }
-          .barcode-main { padding: 8mm; }
+          .barcode-main { padding: 0 !important; }
           body { background: #fff; }
+
+          .page-block {
+            display: block;
+            padding: 6mm 6mm 4mm 6mm;
+            page-break-after: always;
+            min-height: unset;
+          }
+          .page-block:last-child {
+            page-break-after: auto;
+          }
+          .page-block + .page-block {
+            margin-top: 0;
+            border-top: none;
+            padding-top: 6mm;
+          }
+          .page-footer {
+            display: block !important;
+            margin-top: 6mm;
+            padding: 3mm 0;
+            font-size: 10pt;
+            font-weight: 700;
+            color: #000000 !important;
+            border-top: 0.5pt solid #000;
+            text-align: center;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
         }
       `}</style>
 
@@ -250,18 +304,22 @@ export default function BarcodePrintPage() {
             <button className="link-item" onClick={() => setPadding(0)}>no padding</button>
           </div>
 
-          {/* Print options */}
+          {/* Page numbers toggle */}
           <div className="section-group">
-            <div className="section-label">Print options</div>
-            <div className="checkbox-row">
-              <input
-                type="checkbox"
-                id="pagebreak"
-                checked={pageBreak}
-                onChange={e => setPageBreak(e.target.checked)}
-              />
-              <label htmlFor="pagebreak">one page per barcode</label>
-            </div>
+            <div className="section-label">Page numbers</div>
+            <button className="link-item" onClick={() => setShowPageNo(true)}>On</button>
+            <button className="link-item" onClick={() => setShowPageNo(false)}>Off</button>
+          </div>
+
+          {/* Rows per page */}
+          <div className="section-group">
+            <div className="section-label">Rows per page</div>
+            <button className="link-item" onClick={() => setRowsPerPage(2)}>2 rows</button>
+            <button className="link-item" onClick={() => setRowsPerPage(3)}>3 rows</button>
+            <button className="link-item" onClick={() => setRowsPerPage(4)}>4 rows</button>
+            <button className="link-item" onClick={() => setRowsPerPage(5)}>5 rows</button>
+            <button className="link-item" onClick={() => setRowsPerPage(6)}>6 rows</button>
+            <button className="link-item" onClick={() => setRowsPerPage(7)}>7 rows</button>
           </div>
 
           {/* Download ZIP */}
@@ -293,31 +351,33 @@ export default function BarcodePrintPage() {
 
         {/* ── Main barcode area ── */}
         <main className="barcode-main">
-
-          <div
-            className="barcodes-grid"
-            style={{
-              gridTemplateColumns: `repeat(${columns}, 1fr)`,
-              gap: padding,
-            }}
-          >
-            {values.map((val) => (
+          {pages.map((pageItems, pageIndex) => (
+            <div key={pageIndex} className="page-block">
               <div
-                key={val}
+                className="barcodes-grid"
                 style={{
-                  pageBreakAfter: pageBreak ? 'always' : 'unset',
-                  textAlign: 'center',
+                  gridTemplateColumns: `repeat(${columns}, 1fr)`,
+                  gap: padding,
                 }}
               >
-                <BarcodeImage
-                  value={val}
-                  barcodeType={barcodeType}
-                  showText={showText}
-                  height={height}
-                />
+                {pageItems.map((val) => (
+                  <div key={val} style={{ textAlign: 'center' }}>
+                    <BarcodeImage
+                      value={val}
+                      barcodeType={barcodeType}
+                      showText={showText}
+                      height={height}
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+              {showPageNo && (
+                <div className="page-footer">
+                  Page {pageIndex + 1} of {totalPages}
+                </div>
+              )}
+            </div>
+          ))}
         </main>
       </div>
     </>

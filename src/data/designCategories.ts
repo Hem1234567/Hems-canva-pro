@@ -81,6 +81,17 @@ export const designCategories: DesignCategory[] = [
     ],
   },
   {
+    id: 'barcode-generator',
+    label: 'Barcode Generator',
+    description: 'Create sequences of barcodes',
+    iconName: 'Tag',
+    defaultWidth: 400,
+    defaultHeight: 300,
+    presets: [
+      { label: 'Standard Barcode', width: 400, height: 300 }
+    ],
+  },
+  {
     id: 'id-card',
     label: 'ID Cards',
     description: 'Employee, student & visitor',

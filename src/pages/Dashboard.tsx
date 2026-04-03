@@ -12,7 +12,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { designCategories, DesignCategory } from '@/data/designCategories';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { LucideIcon } from 'lucide-react';
-import { BarcodeGeneratorDialog } from '@/components/editor/BarcodeGeneratorDialog';
 
 const iconMap: Record<string, LucideIcon> = {
   Presentation, Smartphone, Image, CreditCard, Tag, BadgeCheck, Globe, PenTool,
@@ -43,7 +42,6 @@ const Dashboard = () => {
   const [customW, setCustomW] = useState(800);
   const [customH, setCustomH] = useState(600);
   const [searchQuery, setSearchQuery] = useState('');
-  const [barcodeDialogOpen, setBarcodeDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate('/auth?mode=login', { replace: true });
@@ -77,10 +75,8 @@ const Dashboard = () => {
   };
 
   const handleCategorySelect = (cat: DesignCategory) => {
-    // Labels & Stickers -> open barcode generator dialog
-    if (cat.id === 'label') {
-      setCreateDialogOpen(false);
-      setBarcodeDialogOpen(true);
+    if (cat.id === 'barcode-generator') {
+      navigate('/barcode-generator');
       return;
     }
     if (cat.id === 'custom') {
@@ -217,8 +213,8 @@ const Dashboard = () => {
                   key={cat.id}
                   onClick={() => {
                     setSelectedCategory(null);
-                    if (cat.id === 'label') {
-                      setBarcodeDialogOpen(true);
+                    if (cat.id === 'barcode-generator') {
+                      navigate('/barcode-generator');
                     } else {
                       handleCategorySelect(cat);
                       setCreateDialogOpen(true);
@@ -287,9 +283,6 @@ const Dashboard = () => {
           </>
         )}
       </main>
-
-      {/* Barcode Generator Dialog */}
-      <BarcodeGeneratorDialog open={barcodeDialogOpen} onOpenChange={setBarcodeDialogOpen} />
 
       {/* Create Design Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={(v) => { setCreateDialogOpen(v); if (!v) setSelectedCategory(null); }}>

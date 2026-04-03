@@ -373,6 +373,8 @@ const CanvasElementRenderer = ({ element: el, isSelected, onSelect, onDragStart,
   const commonProps = {
     x: el.x,
     y: el.y,
+    width: el.width,
+    height: el.height,
     rotation: el.rotation,
     opacity: el.opacity,
     draggable: !isLocked,

@@ -95,8 +95,8 @@ const LabelMakerInner = () => {
     }
   };
 
-  const activeTabClass = "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors bg-primary text-white";
-  const inactiveTabClass = "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors bg-white/10 text-gray-300 hover:bg-white/20";
+  const activeTabClass = "flex-1 min-w-[70px] py-2 px-2 md:px-3 text-center rounded-lg text-xs md:text-sm font-medium transition-colors bg-primary text-white";
+  const inactiveTabClass = "flex-1 min-w-[70px] py-2 px-2 md:px-3 text-center rounded-lg text-xs md:text-sm font-medium transition-colors bg-white/10 text-gray-300 hover:bg-white/20";
 
   return (
     <div className="min-h-screen bg-neutral-950 pt-16 px-4 pb-12">
@@ -125,7 +125,7 @@ const LabelMakerInner = () => {
                   <option className="bg-neutral-800" value="4x6">4" x 6"</option>
                   <option className="bg-neutral-800" value="custom">Custom Size</option>
                 </select>
-                <div className="grid grid-cols-2 gap-3 mt-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
                   <div>
                     <label className="text-xs text-gray-400">Width (in)</label>
                     <input 
@@ -166,7 +166,7 @@ const LabelMakerInner = () => {
 
               {/* Tools */}
               <div className="bg-white/5 rounded-2xl p-5">
-                <div className="flex gap-2 mb-4">
+                <div className="flex flex-wrap gap-2 mb-4">
                   <button onClick={() => setActiveTab('barcode')} className={activeTab === 'barcode' ? activeTabClass : inactiveTabClass}>Barcode</button>
                   <button onClick={() => setActiveTab('text')} className={activeTab === 'text' ? activeTabClass : inactiveTabClass}>Text</button>
                   <button onClick={() => setActiveTab('shapes')} className={activeTab === 'shapes' ? activeTabClass : inactiveTabClass}>Shapes</button>
@@ -262,7 +262,7 @@ const LabelMakerInner = () => {
                             <label className="text-xs text-gray-400 block mb-1">Prefix / Suffix</label>
                             <input type="text" value={serialPrefix} onChange={e => setSerialPrefix(e.target.value)} className="w-full px-3 py-2 bg-white/10 border border-white/30 rounded-lg text-white text-sm" placeholder="e.g. SN-" />
                           </div>
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                               <label className="text-xs text-gray-400 block mb-1">Start Serial</label>
                               <input type="number" value={serialStart} onChange={e => setSerialStart(e.target.value)} className="w-full px-3 py-2 bg-white/10 border border-white/30 rounded-lg text-white text-sm" />
@@ -327,7 +327,7 @@ const LabelMakerInner = () => {
                   </div>
                   
                   {/* Position & Size */}
-                  <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                     <div>
                       <label className="text-xs text-gray-400">Width</label>
                       <input 
@@ -350,7 +350,7 @@ const LabelMakerInner = () => {
 
                   {/* Colors & Styles */}
                   <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
                         <label className="text-xs text-gray-400">Color (Fill)</label>
                         <div className="flex gap-2 items-center mt-1">
@@ -434,7 +434,7 @@ const LabelMakerInner = () => {
                             <option className="bg-neutral-800" value="Verdana">Verdana</option>
                           </select>
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                           <div>
                             <label className="text-xs text-gray-400 block mb-1">Font Size</label>
                             <input 
@@ -519,7 +519,7 @@ const LabelMakerInner = () => {
 
             {/* Right: Preview & Actions */}
             <div className="lg:col-span-2 space-y-6 flex flex-col">
-              <div className="bg-neutral-800 rounded-2xl p-2 sm:p-6 flex-1 flex flex-col items-center justify-center min-h-[400px] overflow-hidden relative group">
+              <div className="bg-neutral-800 rounded-2xl p-2 sm:p-6 flex-1 flex flex-col items-center justify-center min-h-[400px] sm:min-h-[500px] overflow-auto relative group">
                 <div className="absolute top-2 right-2 text-xs text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-opacity z-10 pointer-events-none">
                   Scroll to zoom • Drag items
                 </div>

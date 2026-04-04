@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import JsBarcode from 'jsbarcode';
 import QRCode from 'qrcode';
 import Konva from 'konva';
+import { Menu, X } from 'lucide-react';
 
 /* ── helpers ── */
 function generateValues(
@@ -27,6 +28,7 @@ export default function BarcodePrintPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [pageBreak, setPageBreak] = useState(false);
   const [duplicateCopies, setDuplicateCopies] = useState(1);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Read state from Label Maker or Fallback
   const mode = state?.mode || 'basic';
@@ -295,12 +297,33 @@ export default function BarcodePrintPage() {
         }
       `}</style>
       
-      <div className="print-layout">
+      <div className="print-layout flex-col md:flex-row min-h-screen relative">
+        {/* Mobile Header */}
+        <div className="md:hidden flex items-center justify-between bg-white border-b border-gray-200 p-4 d-print-none sticky top-0 z-[40] shadow-sm w-full">
+          <div className="font-semibold text-lg flex items-center gap-2">⚙ Menu</div>
+          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 bg-gray-100 rounded-md">
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+
+        {/* Sidebar Overlay */}
+        {isMobileMenuOpen && (
+          <div 
+            className="md:hidden fixed inset-0 bg-black/50 z-[45] d-print-none transition-opacity" 
+            onClick={() => setIsMobileMenuOpen(false)} 
+          />
+        )}
+
         {/* Sidebar mimicking User HTML */}
-        <div className="sidebar d-print-none">
-          <a href="#" onClick={(e) => { e.preventDefault(); navigate('/label-maker'); }} className="d-flex align-items-center pb-3 mb-3 link-dark text-decoration-none border-bottom" style={{ borderBottom: '1px solid #dee2e6' }}>
-             <span style={{ fontSize: '1.25rem', fontWeight: 600 }}>⚙ Menu</span>
-          </a>
+        <div className={`sidebar d-print-none fixed md:relative inset-y-0 left-0 z-[50] transition-transform duration-300 shadow-xl md:shadow-none bg-[#f8f9fa] ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+          <div className="d-flex align-items-center pb-3 mb-3 border-bottom" style={{ borderBottom: '1px solid #dee2e6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+             <a href="#" onClick={(e) => { e.preventDefault(); navigate('/label-maker'); }} className="link-dark text-decoration-none p-0" style={{ fontSize: '1.25rem', fontWeight: 600 }}>
+               ⚙ Menu
+             </a>
+             <button className="md:hidden p-1 bg-gray-200 hover:bg-gray-300 rounded border-0" onClick={() => setIsMobileMenuOpen(false)}>
+               <X size={20} />
+             </button>
+          </div>
           
           <ul className="list-unstyled ps-0">
             <li>

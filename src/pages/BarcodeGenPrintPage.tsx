@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import JsBarcode from 'jsbarcode';
+import { Menu, X } from 'lucide-react';
 
 /* ── helpers ── */
 function generateValues(
@@ -114,6 +115,7 @@ export default function BarcodeGenPrintPage() {
   const [showPageNo, setShowPageNo] = useState(true);
   const [duplicateCopies, setDuplicateCopies] = useState(1);
   const [pageBreakPerBarcode, setPageBreakPerBarcode] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   if (!state) {
     return (
@@ -243,11 +245,30 @@ export default function BarcodeGenPrintPage() {
         }
       `}</style>
 
-      <div className="print-layout">
+      <div className="print-layout flex-col md:flex-row min-h-screen relative">
+        {/* Mobile Header */}
+        <div className="md:hidden flex items-center justify-between bg-white border-b border-gray-200 p-4 d-print-none sticky top-0 z-[40] shadow-sm w-full">
+          <div className="font-semibold text-lg flex items-center gap-2">⚙ Menu</div>
+          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 bg-gray-100 rounded-md">
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+
+        {/* Sidebar Overlay */}
+        {isMobileMenuOpen && (
+          <div 
+            className="md:hidden fixed inset-0 bg-black/50 z-[45] d-print-none transition-opacity" 
+            onClick={() => setIsMobileMenuOpen(false)} 
+          />
+        )}
+
         {/* ── Sidebar ── */}
-        <nav className="sidebar d-print-none">
-          <div style={{ fontSize: '1.15rem', fontWeight: 700, paddingBottom: '.75rem', marginBottom: '.75rem', borderBottom: '1px solid #dee2e6', display: 'flex', alignItems: 'center', gap: 6 }}>
-            ⚙ Menu
+        <nav className={`sidebar d-print-none fixed md:relative inset-y-0 left-0 z-[50] transition-transform duration-300 shadow-xl md:shadow-none bg-[#f8f9fa] ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
+          <div style={{ fontSize: '1.15rem', fontWeight: 700, paddingBottom: '.75rem', marginBottom: '.75rem', borderBottom: '1px solid #dee2e6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{display: 'flex', alignItems: 'center', gap: 6}}>⚙ Menu</div>
+            <button className="md:hidden p-1 bg-gray-200 hover:bg-gray-300 rounded border-0" onClick={() => setIsMobileMenuOpen(false)}>
+               <X size={20} />
+            </button>
           </div>
 
           <button className="btn btn-primary" style={{ marginBottom: '8px' }} onClick={() => window.print()}>

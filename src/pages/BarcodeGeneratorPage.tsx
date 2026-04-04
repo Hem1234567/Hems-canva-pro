@@ -92,7 +92,7 @@ export default function BarcodeGeneratorPage() {
 
               <div className="pt-5 border-t border-border">
                 <Label className="font-medium text-sm md:text-base mb-3 block">Enter the first and last number of your series:</Label>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-xs text-muted-foreground mb-1 block">Start</Label>
                     <Input type="number" value={startVal} onChange={e => setStartVal(e.target.value)} />
@@ -104,7 +104,7 @@ export default function BarcodeGeneratorPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label className="text-xs text-muted-foreground mb-1 block">Prefix</Label>
                   <Input value={prefix} onChange={e => setPrefix(e.target.value)} placeholder="AB" />
@@ -122,10 +122,10 @@ export default function BarcodeGeneratorPage() {
             <h3 className="font-semibold text-lg md:text-xl mb-5">2. Value and Properties</h3>
             <div className="space-y-4">
               
-              <div className="flex items-center justify-between gap-4">
-                <Label className="text-sm font-medium text-muted-foreground w-1/3">Unit</Label>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+                <Label className="text-sm font-medium text-muted-foreground sm:w-1/3">Unit</Label>
                 <Select value={unit} onValueChange={setUnit}>
-                  <SelectTrigger className="w-2/3">
+                  <SelectTrigger className="w-full sm:w-2/3">
                     <SelectValue placeholder="Unit" />
                   </SelectTrigger>
                   <SelectContent>
@@ -137,58 +137,58 @@ export default function BarcodeGeneratorPage() {
               </div>
 
               <div className="flex items-center justify-between gap-4">
-                <Label className="text-sm font-medium text-muted-foreground w-1/3">Fixed width</Label>
-                <div className="w-2/3 flex justify-start">
+                <Label className="text-sm font-medium text-muted-foreground w-1/2 sm:w-1/3">Fixed width</Label>
+                <div className="w-1/2 sm:w-2/3 flex justify-end sm:justify-start">
                   <Switch checked={fixedWidth} onCheckedChange={setFixedWidth} />
                 </div>
               </div>
 
               {fixedWidth ? (
-                <div className="flex items-center justify-between gap-4">
-                  <Label className="text-sm font-medium text-muted-foreground w-1/3">Width</Label>
-                  <Input type="number" step="1" value={width} onChange={e => setWidth(e.target.value)} className="w-2/3" />
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+                  <Label className="text-sm font-medium text-muted-foreground sm:w-1/3">Width</Label>
+                  <Input type="number" step="1" value={width} onChange={e => setWidth(e.target.value)} className="w-full sm:w-2/3" />
                 </div>
               ) : (
-                <div className="flex items-center justify-between gap-4">
-                  <Label className="text-sm font-medium text-muted-foreground w-1/3">Bar width</Label>
-                  <Input type="number" step="0.05" value={barWidth} onChange={e => setBarWidth(e.target.value)} className="w-2/3" />
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+                  <Label className="text-sm font-medium text-muted-foreground sm:w-1/3">Bar width</Label>
+                  <Input type="number" step="0.05" value={barWidth} onChange={e => setBarWidth(e.target.value)} className="w-full sm:w-2/3" />
                 </div>
               )}
 
-              <div className="flex items-center justify-between gap-4">
-                <Label className="text-sm font-medium text-muted-foreground w-1/3">Height</Label>
-                <Input type="number" step="1" value={height} onChange={e => setHeight(e.target.value)} className="w-2/3" />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+                <Label className="text-sm font-medium text-muted-foreground sm:w-1/3">Height</Label>
+                <Input type="number" step="1" value={height} onChange={e => setHeight(e.target.value)} className="w-full sm:w-2/3" />
               </div>
 
-              <div className="flex items-center justify-between gap-4 items-center">
-                <Label className="text-sm font-medium text-muted-foreground w-1/3">Check digit</Label>
-                <div className="w-2/3 flex justify-start">
+              <div className="flex items-center justify-between gap-4">
+                <Label className="text-sm font-medium text-muted-foreground w-1/2 sm:w-1/3">Check digit</Label>
+                <div className="w-1/2 sm:w-2/3 flex justify-end sm:justify-start">
                   <Switch checked={checkDigit} onCheckedChange={setCheckDigit} />
                 </div>
               </div>
 
-              <div className="flex items-center justify-between gap-4 items-center">
-                <Label className="text-sm font-medium text-muted-foreground w-1/3">Quiet zone</Label>
-                <div className="w-2/3 flex justify-start">
+              <div className="flex items-center justify-between gap-4">
+                <Label className="text-sm font-medium text-muted-foreground w-1/2 sm:w-1/3">Quiet zone</Label>
+                <div className="w-1/2 sm:w-2/3 flex justify-end sm:justify-start">
                   <Switch checked={quietZone} onCheckedChange={setQuietZone} />
                 </div>
               </div>
 
-              <div className="flex items-center justify-between gap-4 items-center">
-                <Label className="text-sm font-medium text-muted-foreground w-1/3">Show text</Label>
-                <div className="w-2/3 flex justify-start">
+              <div className="flex items-center justify-between gap-4">
+                <Label className="text-sm font-medium text-muted-foreground w-1/2 sm:w-1/3">Show text</Label>
+                <div className="w-1/2 sm:w-2/3 flex justify-end sm:justify-start">
                   <Switch checked={showText} onCheckedChange={setShowText} />
                 </div>
               </div>
 
-              <div className="flex items-center justify-between gap-4">
-                <Label className="text-sm font-medium text-muted-foreground w-1/3">Font size</Label>
-                <Input type="number" step="0.25" value={fontSize} onChange={e => setFontSize(e.target.value)} className="w-2/3" />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+                <Label className="text-sm font-medium text-muted-foreground sm:w-1/3">Font size</Label>
+                <Input type="number" step="0.25" value={fontSize} onChange={e => setFontSize(e.target.value)} className="w-full sm:w-2/3" />
               </div>
 
-              <div className="flex items-center justify-between gap-4">
-                <Label className="text-sm font-medium text-muted-foreground w-1/3">DPI</Label>
-                <Input type="number" step="50" value={dpi} onChange={e => setDpi(e.target.value)} className="w-2/3" />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-4">
+                <Label className="text-sm font-medium text-muted-foreground sm:w-1/3">DPI</Label>
+                <Input type="number" step="50" value={dpi} onChange={e => setDpi(e.target.value)} className="w-full sm:w-2/3" />
               </div>
             </div>
           </div>

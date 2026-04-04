@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
@@ -12,6 +12,7 @@ import BarcodePrintPage from "./pages/BarcodePrintPage";
 import BarcodeGenPrintPage from "./pages/BarcodeGenPrintPage";
 import BarcodeGeneratorPage from "./pages/BarcodeGeneratorPage";
 import LabelMakerPage from "./pages/LabelMakerPage";
+import IdMakerPage from "./pages/IdMakerPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/barcode-gen-print" element={<BarcodeGenPrintPage />} />
             <Route path="/barcode-print" element={<BarcodePrintPage />} />
             <Route path="/label-maker" element={<LabelMakerPage />} />
+            <Route path="/id-maker" element={<IdMakerPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

@@ -92,6 +92,39 @@ export const designCategories: DesignCategory[] = [
     ],
   },
   {
+    id: 'qr-generator',
+    label: 'QR Generator',
+    description: 'Custom QR codes with styles',
+    iconName: 'QrCode',
+    defaultWidth: 400,
+    defaultHeight: 400,
+    presets: [
+      { label: 'QR Code', width: 400, height: 400 }
+    ],
+  },
+  {
+    id: 'organize-pages',
+    label: 'Organize Pages',
+    description: 'Reorder & export image pages',
+    iconName: 'LayoutGrid',
+    defaultWidth: 800,
+    defaultHeight: 600,
+    presets: [
+      { label: 'Default', width: 800, height: 600 }
+    ],
+  },
+  {
+    id: 'bg-remover',
+    label: 'BG Remover',
+    description: 'AI background removal tool',
+    iconName: 'Wand2',
+    defaultWidth: 800,
+    defaultHeight: 600,
+    presets: [
+      { label: 'Default', width: 800, height: 600 }
+    ],
+  },
+  {
     id: 'id-card',
     label: 'ID Cards',
     description: 'Employee, student & visitor',

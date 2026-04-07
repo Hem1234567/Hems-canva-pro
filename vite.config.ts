@@ -19,4 +19,10 @@ export default defineConfig(({ mode }) => ({
     },
     dedupe: ["react", "react-dom", "react/jsx-runtime"],
   },
+  // Allow Vite to serve .wasm files (needed by @imgly/background-removal ONNX runtime)
+  assetsInclude: ["**/*.wasm"],
+  optimizeDeps: {
+    // Exclude from pre-bundling — the library ships pre-built ESM + WASM
+    exclude: ["@imgly/background-removal"],
+  },
 }));

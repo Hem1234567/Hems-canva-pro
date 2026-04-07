@@ -13,6 +13,9 @@ import BarcodeGenPrintPage from "./pages/BarcodeGenPrintPage";
 import BarcodeGeneratorPage from "./pages/BarcodeGeneratorPage";
 import LabelMakerPage from "./pages/LabelMakerPage";
 import IdMakerPage from "./pages/IdMakerPage";
+import QRGeneratorPage from "./pages/QRGeneratorPage";
+import OrganizePagesPage from "./pages/OrganizePagesPage";
+import BgRemoverPage from "./pages/BgRemoverPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +37,9 @@ const App = () => (
             <Route path="/barcode-print" element={<BarcodePrintPage />} />
             <Route path="/label-maker" element={<LabelMakerPage />} />
             <Route path="/id-maker" element={<IdMakerPage />} />
+            <Route path="/qr-generator" element={<QRGeneratorPage />} />
+            <Route path="/organize-pages" element={<OrganizePagesPage />} />
+            <Route path="/bg-remover" element={<BgRemoverPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

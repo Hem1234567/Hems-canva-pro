@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Home, FolderOpen, LogOut, Trash2, Clock, Copy, Pencil, Check, X, Menu, Sparkles, Search, Presentation, Smartphone, Image, CreditCard, Tag, BadgeCheck, Globe, PenTool } from 'lucide-react';
+import { Plus, Home, FolderOpen, LogOut, Trash2, Clock, Copy, Pencil, Check, X, Menu, Sparkles, Search, Presentation, Smartphone, Image, CreditCard, Tag, BadgeCheck, Globe, PenTool, QrCode, LayoutGrid, Wand2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -14,7 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { LucideIcon } from 'lucide-react';
 
 const iconMap: Record<string, LucideIcon> = {
-  Presentation, Smartphone, Image, CreditCard, Tag, BadgeCheck, Globe, PenTool,
+  Presentation, Smartphone, Image, CreditCard, Tag, BadgeCheck, Globe, PenTool, QrCode, LayoutGrid, Wand2,
 };
 
 interface Project {
@@ -77,6 +77,18 @@ const Dashboard = () => {
   const handleCategorySelect = (cat: DesignCategory) => {
     if (cat.id === 'barcode-generator') {
       navigate('/barcode-generator');
+      return;
+    }
+    if (cat.id === 'qr-generator') {
+      navigate('/qr-generator');
+      return;
+    }
+    if (cat.id === 'organize-pages') {
+      navigate('/organize-pages');
+      return;
+    }
+    if (cat.id === 'bg-remover') {
+      navigate('/bg-remover');
       return;
     }
     if (cat.id === 'label') {
@@ -219,6 +231,12 @@ const Dashboard = () => {
                     setSelectedCategory(null);
                     if (cat.id === 'barcode-generator') {
                       navigate('/barcode-generator');
+                    } else if (cat.id === 'qr-generator') {
+                      navigate('/qr-generator');
+                    } else if (cat.id === 'organize-pages') {
+                      navigate('/organize-pages');
+                    } else if (cat.id === 'bg-remover') {
+                      navigate('/bg-remover');
                     } else if (cat.id === 'label') {
                       navigate('/label-maker');
                     } else {

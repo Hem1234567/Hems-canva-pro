@@ -44,8 +44,8 @@ const Landing = () => {
           <Sparkles className="w-3.5 h-3.5" /> Your All-in-One Design Studio
         </div>
         <h1 className="text-4xl sm:text-5xl md:text-7xl font-extrabold text-foreground leading-[1.1] mb-5" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
-          Design <span className="bg-clip-text text-transparent brand-gradient">Anything.</span><br />
-          Create <span className="bg-clip-text text-transparent brand-gradient">Everywhere.</span>
+          Design <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">Anything.</span><br />
+          Create <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">Everywhere.</span>
         </h1>
         <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8 px-2">
           Presentations, social media graphics, posters, business cards, labels, ID cards — 

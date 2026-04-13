@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -22,29 +23,31 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Landing />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/editor/:projectId" element={<Editor />} />
-            <Route path="/barcode-generator" element={<BarcodeGeneratorPage />} />
-            <Route path="/barcode-gen-print" element={<BarcodeGenPrintPage />} />
-            <Route path="/barcode-print" element={<BarcodePrintPage />} />
-            <Route path="/label-maker" element={<LabelMakerPage />} />
-            <Route path="/id-maker" element={<IdMakerPage />} />
-            <Route path="/qr-generator" element={<QRGeneratorPage />} />
-            <Route path="/organize-pages" element={<OrganizePagesPage />} />
-            <Route path="/bg-remover" element={<BgRemoverPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Landing />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/editor/:projectId" element={<Editor />} />
+              <Route path="/barcode-generator" element={<BarcodeGeneratorPage />} />
+              <Route path="/barcode-gen-print" element={<BarcodeGenPrintPage />} />
+              <Route path="/barcode-print" element={<BarcodePrintPage />} />
+              <Route path="/label-maker" element={<LabelMakerPage />} />
+              <Route path="/id-maker" element={<IdMakerPage />} />
+              <Route path="/qr-generator" element={<QRGeneratorPage />} />
+              <Route path="/organize-pages" element={<OrganizePagesPage />} />
+              <Route path="/bg-remover" element={<BgRemoverPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

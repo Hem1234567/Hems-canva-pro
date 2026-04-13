@@ -67,14 +67,12 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="w-12 h-12 rounded-xl brand-gradient flex items-center justify-center mx-auto mb-4">
-            <span className="text-white font-bold text-lg">✦</span>
-          </div>
-          <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
+          <img src="/Quicko-Logo.png" alt="Quicko" className="h-14 sm:h-16 md:h-20 w-auto object-contain mx-auto mb-4 sm:mb-6" />
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>
             {mode === 'login' ? 'Welcome back' : 'Create account'}
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {mode === 'login' ? 'Sign in to DesignFlow' : 'Get started with DesignFlow'}
+            {mode === 'login' ? 'Sign in to Quicko' : 'Get started with Quicko'}
           </p>
         </div>
 

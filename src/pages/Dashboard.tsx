@@ -12,6 +12,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { designCategories, DesignCategory } from '@/data/designCategories';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { LucideIcon } from 'lucide-react';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const iconMap: Record<string, LucideIcon> = {
   Presentation, Smartphone, Image, CreditCard, Tag, BadgeCheck, Globe, PenTool, QrCode, LayoutGrid, Wand2,
@@ -164,13 +165,12 @@ const Dashboard = () => {
         <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)}>
           <Menu className="w-5 h-5" />
         </Button>
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg brand-gradient flex items-center justify-center">
-            <Sparkles className="w-3.5 h-3.5 text-white" />
-          </div>
-          <span className="font-bold text-foreground text-sm" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>DesignFlow</span>
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <img src="/Quicko-Logo.png" alt="Quicko" className="h-6 sm:h-7 w-auto object-contain" />
+          <span className="font-bold text-foreground text-sm sm:text-base" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Quicko</span>
         </div>
         <div className="flex-1" />
+        <ThemeToggle />
         <Button onClick={() => setCreateDialogOpen(true)} size="sm" className="gap-1 brand-gradient border-0 text-white">
           <Plus className="w-4 h-4" /> Create
         </Button>
@@ -189,11 +189,9 @@ const Dashboard = () => {
           : "relative"
       )}>
         <div className="p-4 border-b border-border">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg brand-gradient flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-bold text-foreground" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>DesignFlow</span>
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <img src="/Quicko-Logo.png" alt="Quicko" className="h-7 sm:h-8 w-auto object-contain" />
+            <span className="font-bold text-foreground text-lg sm:text-xl" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Quicko</span>
           </div>
         </div>
 
@@ -206,7 +204,10 @@ const Dashboard = () => {
         </nav>
 
         <div className="p-3 border-t border-border">
-          <div className="text-xs text-muted-foreground mb-2 truncate">{user?.email}</div>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs text-muted-foreground truncate">{user?.email}</div>
+            <ThemeToggle />
+          </div>
           <Button variant="ghost" size="sm" className="w-full gap-2 justify-start text-muted-foreground" onClick={handleLogout}>
             <LogOut className="w-4 h-4" /> Sign out
           </Button>

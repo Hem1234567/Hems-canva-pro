@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { useEditor } from '@/contexts/EditorContext';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import ExportDialog from './ExportDialog';
 import PreviewDialog from './PreviewDialog';
 import PresentationMode from './PresentationMode';
@@ -25,11 +26,9 @@ const EditorNavbar = ({ stageRef }: EditorNavbarProps) => {
           <ArrowLeft className="w-4 h-4" />
         </Button>
       </Link>
-      <div className="hidden sm:flex items-center gap-2">
-        <div className="w-8 h-8 rounded-lg brand-gradient flex items-center justify-center">
-          <Sparkles className="w-4 h-4 text-white" />
-        </div>
-        <span className="font-bold text-foreground hidden lg:inline" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>DesignFlow</span>
+      <div className="hidden sm:flex items-center gap-1.5 sm:gap-2">
+        <img src="/Quicko-Logo.png" alt="Quicko" className="h-6 sm:h-7 md:h-8 w-auto object-contain" />
+        <span className="font-bold text-foreground hidden md:inline text-base lg:text-lg" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Quicko</span>
       </div>
 
       {editing ? (
@@ -49,7 +48,9 @@ const EditorNavbar = ({ stageRef }: EditorNavbarProps) => {
 
       <div className="flex-1" />
 
-      <div className="flex items-center gap-0.5 sm:gap-1">
+      <ThemeToggle />
+
+      <div className="flex items-center gap-0.5 sm:gap-1 pl-1 sm:pl-2">
         <Button variant="ghost" size="icon" onClick={undo} title="Undo" className="h-8 w-8">
           <Undo2 className="w-4 h-4" />
         </Button>

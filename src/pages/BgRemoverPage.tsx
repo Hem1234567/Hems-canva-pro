@@ -2,7 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Upload, Trash2, Download, Copy,
-  Wand2, Loader2, ImageOff,
+  Wand2, Loader2, ImageOff, Lock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -264,15 +264,15 @@ export default function BgRemoverPage() {
               onChange={e => setExportFormat(e.target.value as 'png' | 'jpeg')}
               className="w-full px-3 py-2 rounded-xl border-2 border-border bg-card text-foreground text-sm focus:outline-none focus:border-primary transition-all"
             >
-              <option value="png">📸 PNG — transparent background</option>
-              <option value="jpeg">🖼️ JPEG — white background fill</option>
+              <option value="png">PNG — transparent background</option>
+              <option value="jpeg">JPEG — white background fill</option>
             </select>
           </div>
 
           {/* Info */}
-          <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-foreground/80 leading-relaxed">
-            🔒 <strong>Privacy-first:</strong> The AI model runs entirely in your browser using Google MediaPipe.
-            No image is ever sent to a server. First run downloads the model (~5 MB).
+          <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-sm text-foreground/80 leading-relaxed flex items-start gap-2">
+            <Lock className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            <span><strong>Privacy-first:</strong> The AI model runs entirely in your browser using Google MediaPipe. No image is ever sent to a server. First run downloads the model (~5 MB).</span>
           </div>
         </section>
 

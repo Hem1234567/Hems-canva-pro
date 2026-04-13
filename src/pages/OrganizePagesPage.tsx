@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Upload, Trash2, ChevronLeft, ChevronRight,
   Download, GripVertical, FilePlus, LayoutGrid, Sparkles,
-  Loader2, FileText, RotateCw,
+  Loader2, FileText, RotateCw, Image as ImageIcon, Type, TableProperties, Presentation,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -91,7 +91,7 @@ async function docxToPages(buf: ArrayBuffer, name: string): Promise<string[]> {
     const [c, ctx] = makeCanvas(595, 842);
     ctx.fillStyle = '#4f46e5'; ctx.fillRect(0, 0, 595, 6);
     ctx.fillStyle = '#1e1b4b'; ctx.font = 'bold 15px sans-serif';
-    ctx.fillText('📄 ' + name.replace(/\.[^.]+$/, ''), 50, 38);
+    ctx.fillText(name.replace(/\.[^.]+$/, ''), 50, 38);
     ctx.fillStyle = '#999'; ctx.font = '10px sans-serif';
     ctx.fillText(`Page ${Math.floor(start / PER_PAGE) + 1}`, 515, 38);
     ctx.fillStyle = '#e5e7eb'; ctx.fillRect(50, 48, 495, 1);
@@ -155,7 +155,7 @@ async function xlsxToPages(buf: ArrayBuffer, name: string): Promise<string[]> {
     const [c, ctx] = makeCanvas(W, H, '#f8fafc');
     ctx.fillStyle = '#217346'; ctx.fillRect(0, 0, W, 44);
     ctx.fillStyle = '#fff'; ctx.font = 'bold 14px sans-serif';
-    ctx.fillText(`📊 ${name}`, 14, 22);
+    ctx.fillText(`${name}`, 14, 22);
     ctx.font = '11px sans-serif'; ctx.fillText(`Sheet: ${sheetName}  •  ${data.length} rows`, 14, 38);
     const colW = Math.min(110, (W - 28) / Math.max(1, (data[0] || []).length));
     const rowH = 22;
@@ -382,9 +382,15 @@ export default function OrganizePagesPage() {
                 <p className="text-sm text-muted-foreground mt-1">PDF · Word · PowerPoint · Excel · PNG · JPG</p>
               </div>
               <div className="flex flex-wrap justify-center gap-2">
-                {[['📄', 'PDF'], ['📝', 'Word'], ['📊', 'Excel'], ['📽️', 'PowerPoint'], ['🖼️', 'Images']].map(([icon, label]) => (
-                  <span key={label} className="flex items-center gap-1 px-3 py-1.5 bg-muted rounded-full text-xs text-muted-foreground">
-                    {icon} {label}
+                {[
+                  { icon: FileText, label: 'PDF' },
+                  { icon: Type, label: 'Word' },
+                  { icon: TableProperties, label: 'Excel' },
+                  { icon: Presentation, label: 'PowerPoint' },
+                  { icon: ImageIcon, label: 'Images' }
+                ].map(t => (
+                  <span key={t.label} className="flex items-center gap-1.5 px-3 py-1.5 bg-muted rounded-full text-xs text-muted-foreground">
+                    <t.icon className="w-3.5 h-3.5" /> {t.label}
                   </span>
                 ))}
               </div>

@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
-import { ArrowRight, Sparkles, Layers, QrCode, FileDown, Palette, Monitor, Smartphone, CreditCard } from 'lucide-react';
+import { ArrowRight, Sparkles, Layers, QrCode, FileDown, Palette, Monitor, Smartphone, CreditCard, Presentation, Image as ImageIcon, Briefcase, Tag, BadgeCheck, Globe } from 'lucide-react';
 
 const Landing = () => {
   const { user } = useAuth();
@@ -64,16 +64,16 @@ const Landing = () => {
       <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-8">
         <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
           {[
-            { emoji: '📊', label: 'Presentations' },
-            { emoji: '📱', label: 'Social Media' },
-            { emoji: '🖼️', label: 'Posters' },
-            { emoji: '💼', label: 'Business Cards' },
-            { emoji: '🏷️', label: 'Labels' },
-            { emoji: '📇', label: 'ID Cards' },
-            { emoji: '🌐', label: 'Web Banners' },
+            { icon: Presentation, label: 'Presentations' },
+            { icon: Smartphone, label: 'Social Media' },
+            { icon: ImageIcon, label: 'Posters' },
+            { icon: Briefcase, label: 'Business Cards' },
+            { icon: Tag, label: 'Labels' },
+            { icon: BadgeCheck, label: 'ID Cards' },
+            { icon: Globe, label: 'Web Banners' },
           ].map(t => (
             <div key={t.label} className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-full text-sm font-medium text-foreground hover:border-primary/50 transition-colors cursor-default">
-              <span>{t.emoji}</span> {t.label}
+              <t.icon className="w-4 h-4 text-primary" /> {t.label}
             </div>
           ))}
         </div>

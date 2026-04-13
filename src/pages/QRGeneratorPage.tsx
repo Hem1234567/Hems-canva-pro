@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, RefreshCw, QrCode } from 'lucide-react';
+import { ArrowLeft, Download, RefreshCw, QrCode, Link as LinkIcon, Palette, Square, LayoutTemplate, Target, FolderDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import QRCode from 'qrcode';
@@ -236,8 +236,8 @@ export default function QRGeneratorPage() {
 
           {/* Content input */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
-              🔗 Content / URL
+            <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+              <LinkIcon className="w-3.5 h-3.5" /> Content / URL
             </label>
             <input
               type="text"
@@ -253,8 +253,8 @@ export default function QRGeneratorPage() {
 
           {/* Color swatches */}
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
-              🎨 QR Color
+            <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-3">
+              <Palette className="w-3.5 h-3.5" /> QR Color
             </label>
             <div className="flex gap-3 flex-wrap">
               {COLOR_SWATCHES.map(sw => (
@@ -276,11 +276,12 @@ export default function QRGeneratorPage() {
 
           {/* Data modules style */}
           <StyleRow
-            label="🔘 Data Modules Style"
+            icon={LayoutTemplate}
+            label="Data Modules Style"
             options={[
-              { value: 'square', label: '◼ Square' },
-              { value: 'rounded', label: '⬡ Rounded' },
-              { value: 'dots', label: '● Dots' },
+              { value: 'square', label: 'Square' },
+              { value: 'rounded', label: 'Rounded' },
+              { value: 'dots', label: 'Dots' },
             ]}
             value={dotStyle}
             onChange={v => setDotStyle(v as DotStyle)}
@@ -288,11 +289,12 @@ export default function QRGeneratorPage() {
 
           {/* Finder border style */}
           <StyleRow
-            label="📐 Finder Border Style"
+            icon={Square}
+            label="Finder Border Style"
             options={[
-              { value: 'square', label: '⬛ Square' },
-              { value: 'rounded', label: '🔘 Rounded' },
-              { value: 'dot', label: '⚫ Dot' },
+              { value: 'square', label: 'Square' },
+              { value: 'rounded', label: 'Rounded' },
+              { value: 'dot', label: 'Dot' },
             ]}
             value={borderStyle}
             onChange={v => setBorderStyle(v as BorderStyle)}
@@ -300,26 +302,27 @@ export default function QRGeneratorPage() {
 
           {/* Finder center style */}
           <StyleRow
-            label="🎯 Finder Center Style"
+            icon={Target}
+            label="Finder Center Style"
             options={[
-              { value: 'square', label: '◻ Square' },
-              { value: 'dot', label: '🔴 Dot' },
+              { value: 'square', label: 'Square' },
+              { value: 'dot', label: 'Dot' },
             ]}
             value={centerStyle}
             onChange={v => setCenterStyle(v as CenterStyle)}
           />
 
           <div className="border-t border-border pt-4">
-            <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
-              📁 Export Format
+            <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+              <FolderDown className="w-3.5 h-3.5" /> Export Format
             </label>
             <select
               value={exportFormat}
               onChange={e => setExportFormat(e.target.value as ExportFormat)}
               className="w-full sm:w-auto px-4 py-2 rounded-xl border-2 border-border bg-card text-foreground text-sm focus:outline-none focus:border-primary transition-all"
             >
-              <option value="png">📸 PNG (Transparent support)</option>
-              <option value="jpeg">🖼️ JPEG (White background)</option>
+              <option value="png">PNG (Transparent support)</option>
+              <option value="jpeg">JPEG (White background)</option>
             </select>
           </div>
         </section>
@@ -369,11 +372,13 @@ export default function QRGeneratorPage() {
 
 // ── StyleRow helper ───────────────────────────────────────────────────────────
 function StyleRow({
+  icon: Icon,
   label,
   options,
   value,
   onChange,
 }: {
+  icon: any;
   label: string;
   options: { value: string; label: string }[];
   value: string;
@@ -381,8 +386,8 @@ function StyleRow({
 }) {
   return (
     <div>
-      <label className="block text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
-        {label}
+      <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+        <Icon className="w-3.5 h-3.5" /> {label}
       </label>
       <div className="flex gap-2 flex-wrap">
         {options.map(opt => (

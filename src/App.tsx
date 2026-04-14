@@ -37,7 +37,7 @@ const App = () => (
               <Route path="/barcode-generator" element={<BarcodeGeneratorPage />} />
               <Route path="/barcode-gen-print" element={<BarcodeGenPrintPage />} />
               <Route path="/barcode-print" element={<BarcodePrintPage />} />
-              <Route path="/label-maker" element={<LabelMakerPage />} />
+              <Route path="/label-generator" element={<LabelMakerPage />} />
               <Route path="/id-maker" element={<IdMakerPage />} />
               <Route path="/qr-generator" element={<QRGeneratorPage />} />
               <Route path="/organize-pages" element={<OrganizePagesPage />} />

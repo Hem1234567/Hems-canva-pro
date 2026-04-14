@@ -59,7 +59,10 @@ const Dashboard = () => {
       .from('projects')
       .select('id, name, canvas_width, canvas_height, elements, updated_at, created_at')
       .order('updated_at', { ascending: false });
-    if (error) toast.error('Failed to load projects');
+    if (error) {
+      console.error('Projects fetch error:', error);
+      toast.error(`Projects error: ${error.message}`);
+    }
     setProjects(data || []);
     setLoading(false);
   };
@@ -71,7 +74,11 @@ const Dashboard = () => {
       .insert({ user_id: user.id, name: name || 'Untitled Design', canvas_width: width, canvas_height: height })
       .select('id')
       .single();
-    if (error) { toast.error('Failed to create project'); return; }
+    if (error) {
+      console.error('Project creation error:', error);
+      toast.error(`Create Error: ${error.message}`);
+      return;
+    }
     navigate(`/editor/${data.id}`);
   };
 
@@ -93,7 +100,7 @@ const Dashboard = () => {
       return;
     }
     if (cat.id === 'label') {
-      navigate('/label-maker');
+      navigate('/label-generator');
       return;
     }
     if (cat.id === 'custom') {
@@ -239,7 +246,7 @@ const Dashboard = () => {
                     } else if (cat.id === 'bg-remover') {
                       navigate('/bg-remover');
                     } else if (cat.id === 'label') {
-                      navigate('/label-maker');
+                      navigate('/label-generator');
                     } else {
                       handleCategorySelect(cat);
                       setCreateDialogOpen(true);

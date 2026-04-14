@@ -115,4 +115,22 @@
   .brand-glow-hover:hover {
     box-shadow: 0 0 28px hsla(252, 75%, 60%, 0.4);
   }
+
+  /* Utility class to hide scrollbar if targeted separately */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Global Scrollbar Hiding (Preserves Scrolling) */
+::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+* {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }

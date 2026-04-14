@@ -317,7 +317,7 @@ export default function BarcodePrintPage() {
         {/* Sidebar mimicking User HTML */}
         <div className={`sidebar d-print-none fixed md:relative inset-y-0 left-0 z-[50] transition-transform duration-300 shadow-xl md:shadow-none bg-[#f8f9fa] ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}>
           <div className="d-flex align-items-center pb-3 mb-3 border-bottom" style={{ borderBottom: '1px solid #dee2e6', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-             <a href="#" onClick={(e) => { e.preventDefault(); navigate('/label-maker'); }} className="link-dark text-decoration-none p-0" style={{ fontSize: '1.25rem', fontWeight: 600 }}>
+             <a href="#" onClick={(e) => { e.preventDefault(); navigate('/label-generator'); }} className="link-dark text-decoration-none p-0" style={{ fontSize: '1.25rem', fontWeight: 600 }}>
                ⚙ Menu
              </a>
              <button className="md:hidden p-1 bg-gray-200 hover:bg-gray-300 rounded border-0" onClick={() => setIsMobileMenuOpen(false)}>
@@ -330,7 +330,7 @@ export default function BarcodePrintPage() {
               <div className="d-grid gap-2">
                 <button className="btn btn-primary mb-3" onClick={() => window.print()}>print directly</button>
                 <button className="btn btn-primary mb-3" onClick={() => alert('Download as PDF handled by full export functionality.')}>download as PDF</button>
-                <button className="btn btn-warning mb-5" onClick={() => navigate('/label-maker')}>return to input</button>
+                <button className="btn btn-warning mb-5" onClick={() => navigate('/label-generator')}>return to input</button>
               </div>
             </li>
             

@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Carousel, CarouselContent, CarouselItem } from '@/components/ui/carousel';
+import AutoScroll from 'embla-carousel-auto-scroll';
 import { useAuth } from '@/contexts/AuthContext';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { ArrowRight, Sparkles, Layers, QrCode, FileDown, Palette, Monitor, Smartphone, CreditCard, Presentation, Image as ImageIcon, Briefcase, Tag, BadgeCheck, Globe } from 'lucide-react';
@@ -61,22 +63,38 @@ const Landing = () => {
       </section>
 
       {/* Design types strip */}
-      <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-8">
-        <div className="flex flex-wrap justify-center gap-3 sm:gap-4">
-          {[
-            { icon: Presentation, label: 'Presentations' },
-            { icon: Smartphone, label: 'Social Media' },
-            { icon: ImageIcon, label: 'Posters' },
-            { icon: Briefcase, label: 'Business Cards' },
-            { icon: Tag, label: 'Labels' },
-            { icon: BadgeCheck, label: 'ID Cards' },
-            { icon: Globe, label: 'Web Banners' },
-          ].map(t => (
-            <div key={t.label} className="flex items-center gap-2 px-4 py-2 bg-card border border-border rounded-full text-sm font-medium text-foreground hover:border-primary/50 transition-colors cursor-default">
-              <t.icon className="w-4 h-4 text-primary" /> {t.label}
-            </div>
-          ))}
-        </div>
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-8 relative">
+        {/* Soft edge masks for premium scroll feel */}
+        <div className="absolute left-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-8 sm:w-16 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
+        
+        <Carousel 
+          opts={{ align: "center", dragFree: true, loop: true }}
+          plugins={[AutoScroll({ speed: 1, stopOnInteraction: false, stopOnMouseEnter: true })]}
+          className="w-full cursor-grab active:cursor-grabbing"
+        >
+          <CarouselContent className="ml-0 flex">
+            {[
+              { icon: Presentation, label: 'Presentations' },
+              { icon: Smartphone, label: 'Social Media' },
+              { icon: ImageIcon, label: 'Posters' },
+              { icon: Briefcase, label: 'Business Cards' },
+              { icon: Tag, label: 'Labels' },
+              { icon: BadgeCheck, label: 'ID Cards' },
+              { icon: Globe, label: 'Web Banners' },
+              // Duplicated for seamless loop illusion
+              { icon: Presentation, label: 'Slide Decks' },
+              { icon: Smartphone, label: 'Stories' },
+              { icon: ImageIcon, label: 'Flyers' },
+            ].map((t, i) => (
+              <CarouselItem key={t.label + i} className="pl-3 sm:pl-4 basis-auto select-none">
+                <div className="flex items-center gap-2 px-5 py-2.5 bg-card rounded-full text-sm font-medium text-foreground hover:text-primary transition-colors shadow-sm whitespace-nowrap">
+                  <t.icon className="w-4 h-4 text-primary" /> {t.label}
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+        </Carousel>
       </section>
 
       {/* Features */}

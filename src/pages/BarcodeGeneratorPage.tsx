@@ -4,8 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Upload } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 const BARCODE_TYPES = [
   'CODE128', 'EAN13', 'EAN8', 'UPC', 'CODE39', 'ITF14', 'MSI', 'pharmacode', 'codabar', 'qr'
@@ -15,8 +18,12 @@ export default function BarcodeGeneratorPage() {
   const navigate = useNavigate();
   
   const [barcodeType, setBarcodeType] = useState('CODE128');
+  const [inputMode, setInputMode] = useState('sequential');
   const [startVal, setStartVal] = useState('10000');
   const [endVal, setEndVal] = useState('10005');
+  const [customValues, setCustomValues] = useState('');
+  const [excelValues, setExcelValues] = useState<string[]>([]);
+  const [excelFileName, setExcelFileName] = useState('');
   const [prefix, setPrefix] = useState('AB');
   const [suffix, setSuffix] = useState('-C');
   
@@ -31,12 +38,44 @@ export default function BarcodeGeneratorPage() {
   const [fontSize, setFontSize] = useState('6');
   const [dpi, setDpi] = useState('300');
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setExcelFileName(file.name);
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: 'binary' });
+        const wsname = wb.SheetNames[0];
+        const ws = wb.Sheets[wsname];
+        const data = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+        
+        // Flatten data and filter out empty cells
+        const values = data.flat().filter(item => item !== undefined && item !== null && item !== '').map(String);
+        setExcelValues(values);
+      } catch (error) {
+        console.error("Error parsing excel file:", error);
+      }
+    };
+    reader.readAsBinaryString(file);
+  };
+
   const handleGenerate = () => {
+    const parsedCustom = customValues
+      .split(/[\n,]+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 0);
+
     navigate('/barcode-gen-print', {
       state: {
         barcodeType,
+        inputMode,
         startVal: parseInt(startVal) || 1,
         endVal: parseInt(endVal) || 5,
+        customValues: parsedCustom,
+        excelValues,
         prefix,
         suffix,
         unit,
@@ -91,17 +130,52 @@ export default function BarcodeGeneratorPage() {
               </div>
 
               <div className="pt-5 border-t border-border">
-                <Label className="font-medium text-sm md:text-base mb-3 block">Enter the first and last number of your series:</Label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-1 block">Start</Label>
-                    <Input type="number" value={startVal} onChange={e => setStartVal(e.target.value)} />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-1 block">End</Label>
-                    <Input type="number" value={endVal} onChange={e => setEndVal(e.target.value)} />
-                  </div>
-                </div>
+                <Tabs value={inputMode} onValueChange={setInputMode} className="w-full">
+                  <TabsList className="grid w-full grid-cols-3 mb-4">
+                    <TabsTrigger value="sequential">Sequential</TabsTrigger>
+                    <TabsTrigger value="custom">Custom List</TabsTrigger>
+                    <TabsTrigger value="excel">Excel</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="sequential" className="space-y-4">
+                    <Label className="font-medium text-sm md:text-base block">Enter the first and last number of your series:</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label className="text-xs text-muted-foreground mb-1 block">Start</Label>
+                        <Input type="number" value={startVal} onChange={e => setStartVal(e.target.value)} />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-muted-foreground mb-1 block">End</Label>
+                        <Input type="number" value={endVal} onChange={e => setEndVal(e.target.value)} />
+                      </div>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="custom" className="space-y-4">
+                    <Label className="font-medium text-sm md:text-base block">Enter custom values (comma or newline separated):</Label>
+                    <Textarea 
+                      value={customValues}
+                      onChange={e => setCustomValues(e.target.value)}
+                      placeholder="e.g. 1001, 1002, 1005&#10;1008"
+                      className="min-h-[100px] resize-y"
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="excel" className="space-y-4">
+                    <Label className="font-medium text-sm md:text-base block">Upload Excel or CSV file:</Label>
+                    <Input 
+                      type="file" 
+                      accept=".xlsx,.xls,.csv" 
+                      onChange={handleFileUpload} 
+                      className="cursor-pointer"
+                    />
+                    {excelFileName && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Loaded: <span className="font-medium">{excelFileName}</span> ({excelValues.length} values found)
+                      </p>
+                    )}
+                  </TabsContent>
+                </Tabs>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

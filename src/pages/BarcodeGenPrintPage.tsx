@@ -135,8 +135,11 @@ export default function BarcodeGenPrintPage() {
 
   const {
     barcodeType = 'CODE128',
+    inputMode   = 'sequential',
     startVal    = 10000,
     endVal      = 10005,
+    customValues = [],
+    excelValues = [],
     prefix      = '',
     suffix      = '',
     showText    = true,
@@ -150,7 +153,14 @@ export default function BarcodeGenPrintPage() {
     width       = 50,
   } = state;
 
-  const allValues = generateValues(startVal, endVal, prefix, suffix);
+  let allValues: string[] = [];
+  if (inputMode === 'custom') {
+    allValues = customValues.map((v: string) => `${prefix}${v}${suffix}`);
+  } else if (inputMode === 'excel') {
+    allValues = excelValues;
+  } else {
+    allValues = generateValues(startVal, endVal, prefix, suffix);
+  }
   // expand by duplicate copies
   const values = allValues.flatMap(v => Array.from({ length: duplicateCopies }, () => v));
 

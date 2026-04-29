@@ -28,7 +28,7 @@ interface Project {
   created_at: string;
 }
 
-type Tab = 'home' | 'projects';
+type Tab = 'home' | 'projects' | 'recent';
 
 const Dashboard = () => {
   const { user, signOut, loading: authLoading } = useAuth();
@@ -166,7 +166,7 @@ const Dashboard = () => {
     : projects;
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="fixed inset-0 bg-background flex overflow-hidden">
       {/* Mobile top bar */}
       <div className="fixed top-0 left-0 right-0 h-14 border-b border-border bg-card flex items-center px-4 gap-3 z-40 md:hidden">
         <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)}>
@@ -205,6 +205,7 @@ const Dashboard = () => {
         <nav className="flex-1 p-3 space-y-1">
           <SidebarBtn icon={Home} label="Home" active={activeTab === 'home'} onClick={() => { setActiveTab('home'); setSidebarOpen(false); }} />
           <SidebarBtn icon={FolderOpen} label="All Projects" active={activeTab === 'projects'} onClick={() => { setActiveTab('projects'); setSidebarOpen(false); }} />
+          <SidebarBtn icon={Clock} label="Recent" active={activeTab === 'recent'} onClick={() => { setActiveTab('recent'); setSidebarOpen(false); }} />
           <Button onClick={() => { setCreateDialogOpen(true); setSidebarOpen(false); }} className="w-full gap-2 mt-4 brand-gradient border-0 text-white hover:opacity-90">
             <Plus className="w-4 h-4" /> Create Design
           </Button>
@@ -269,14 +270,6 @@ const Dashboard = () => {
               </button>
             </div>
 
-            {recentProjects.length > 0 && (
-              <>
-                <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-muted-foreground" /> Recent Designs
-                </h2>
-                <ProjectGrid projects={recentProjects} onDelete={deleteProject} onDuplicate={duplicateProject} onRename={renameProject} />
-              </>
-            )}
           </>
         )}
 
@@ -311,6 +304,28 @@ const Dashboard = () => {
               </div>
             ) : (
               <ProjectGrid projects={filteredProjects} onDelete={deleteProject} onDuplicate={duplicateProject} onRename={renameProject} />
+            )}
+          </>
+        )}
+
+        {activeTab === 'recent' && (
+          <>
+            <div className="mb-6 sm:mb-8">
+              <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: 'Space Grotesk, sans-serif' }}>Recent Designs</h1>
+              <p className="text-muted-foreground mt-1">Your recently updated designs.</p>
+            </div>
+            
+            {loading ? (
+              <p className="text-muted-foreground">Loading projects...</p>
+            ) : projects.length === 0 ? (
+              <div className="text-center py-20">
+                <p className="text-muted-foreground mb-4">No recent designs found.</p>
+                <Button onClick={() => setCreateDialogOpen(true)} className="gap-2 brand-gradient border-0 text-white">
+                  <Plus className="w-4 h-4" /> Create Design
+                </Button>
+              </div>
+            ) : (
+              <ProjectGrid projects={projects} onDelete={deleteProject} onDuplicate={duplicateProject} onRename={renameProject} />
             )}
           </>
         )}

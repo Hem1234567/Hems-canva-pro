@@ -24,19 +24,18 @@ async function getSegmenter(): Promise<ImageSegmenter> {
           'https://storage.googleapis.com/mediapipe-models/image_segmenter/selfie_segmenter/float16/latest/selfie_segmenter.tflite',
         delegate: 'GPU',
       },
-      outputCategoryMask: true,
-      outputConfidenceMasks: false,
+      outputCategoryMask: false,
+      outputConfidenceMasks: true,
       runningMode: 'IMAGE',
     });
   })();
   return segmenterPromise;
 }
 
-// ── Remove background via canvas masking ──────────────────────────────────────
+// ── Remove background via smooth alpha mask ──────────────────────────────────
 async function removeBg(file: File): Promise<Blob> {
   const segmenter = await getSegmenter();
 
-  // Draw source image onto an offscreen canvas
   const bitmap = await createImageBitmap(file);
   const canvas = document.createElement('canvas');
   canvas.width = bitmap.width;
@@ -45,7 +44,6 @@ async function removeBg(file: File): Promise<Blob> {
   ctx.drawImage(bitmap, 0, 0);
   bitmap.close();
 
-  // Run segmentation on the canvas element
   const imgEl = new Image();
   imgEl.width = canvas.width;
   imgEl.height = canvas.height;
@@ -53,19 +51,54 @@ async function removeBg(file: File): Promise<Blob> {
   await new Promise<void>(r => { imgEl.onload = () => r(); });
 
   const result = segmenter.segment(imgEl);
-  const mask = result.categoryMask;
-  if (!mask) throw new Error('Segmentation returned no mask.');
+  const confMasks = result.confidenceMasks;
+  if (!confMasks || confMasks.length === 0) throw new Error('Segmentation returned no confidence mask.');
 
-  const maskArr = mask.getAsUint8Array();
-  mask.close();
+  // selfie_segmenter usually returns 2 masks, but sometimes 1.
+  // We grab the person mask if available, or the only mask.
+  const personMask = confMasks.length > 1 ? confMasks[1] : confMasks[0];
+  const maskArr = personMask.getAsFloat32Array();
 
-  // Apply mask: category 0 = background → alpha 0
-  const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const px = imgData.data;
+  // Create an ImageData for the mask
+  const maskWidth = personMask.width || canvas.width;
+  const maskHeight = personMask.height || canvas.height;
+  
+  // Robust check: the 4 corners of a photo are almost always background.
+  // If the mask values at the corners are high (~1.0), this is a background mask and we must invert it.
+  const cornerSum = maskArr[0] + 
+                    maskArr[maskWidth - 1] + 
+                    maskArr[(maskHeight - 1) * maskWidth] + 
+                    maskArr[maskHeight * maskWidth - 1];
+  const isBackgroundMask = cornerSum > 2.0;
+
+  const maskCanvas = document.createElement('canvas');
+  maskCanvas.width = maskWidth;
+  maskCanvas.height = maskHeight;
+  const maskCtx = maskCanvas.getContext('2d')!;
+  const maskImgData = maskCtx.createImageData(maskWidth, maskHeight);
+  const mPx = maskImgData.data;
+  
   for (let i = 0; i < maskArr.length; i++) {
-    if (maskArr[i] === 0) px[i * 4 + 3] = 0;
+    let alpha = maskArr[i];
+    if (isBackgroundMask) alpha = 1.0 - alpha;
+    
+    // Adjust contrast for cleaner edges
+    alpha = Math.max(0, Math.min(1, (alpha - 0.1) * 1.2));
+    
+    const val = Math.round(alpha * 255);
+    mPx[i * 4] = 0;
+    mPx[i * 4 + 1] = 0;
+    mPx[i * 4 + 2] = 0;
+    mPx[i * 4 + 3] = val; // The alpha channel acts as the mask
   }
-  ctx.putImageData(imgData, 0, 0);
+  maskCtx.putImageData(maskImgData, 0, 0);
+  
+  // Composite the mask onto the original image
+  ctx.globalCompositeOperation = 'destination-in';
+  ctx.drawImage(maskCanvas, 0, 0, canvas.width, canvas.height);
+  ctx.globalCompositeOperation = 'source-over'; // Reset
+
+  confMasks.forEach(m => m.close());
 
   return new Promise<Blob>((res, rej) =>
     canvas.toBlob(b => b ? res(b) : rej(new Error('toBlob failed')), 'image/png')

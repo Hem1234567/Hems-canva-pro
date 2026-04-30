@@ -105,8 +105,8 @@ const LabelMakerInner = () => {
           <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
         </Button>
         
-        <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 md:p-8 max-w-6xl mx-auto border border-white/20">
-          <div className="grid lg:grid-cols-3 gap-6">
+        <div className="bg-white/10 backdrop-blur-md rounded-3xl p-4 sm:p-6 md:p-8 max-w-6xl mx-auto border border-white/20">
+          <div className="flex flex-col-reverse lg:grid lg:grid-cols-3 gap-6">
             <div className="lg:col-span-1 space-y-6">
               
               {/* Size Configuration */}

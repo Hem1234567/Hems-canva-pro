@@ -76,7 +76,7 @@ const templates = [
 
 const IdMakerPage = () => {
   const [activeTab, setActiveTab] = useState('get-started');
-  const [categoriesExpanded, setCategoriesExpanded] = useState(true);
+  const [categoriesExpanded, setCategoriesExpanded] = useState(typeof window !== 'undefined' ? window.innerWidth > 768 : true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

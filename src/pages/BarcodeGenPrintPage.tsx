@@ -308,7 +308,7 @@ export default function BarcodeGenPrintPage() {
           {/* Rows per page */}
           <div className="section-group">
             <div className="section-title">Rows per page</div>
-            {[3, 4, 5, 6, 7, 8].map(r => (
+            {[3, 4, 5, 6, 7, 8, 9, 10].map(r => (
               <button key={r} className={`link-btn ${rowsPerPage === r ? 'active' : ''}`} onClick={() => setRowsPerPage(r)}>{r} rows</button>
             ))}
           </div>

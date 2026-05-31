@@ -170,6 +170,91 @@ const RightPanel = () => {
           <Field label="Angle" value={el.rotation} onChange={v => update({ rotation: v })} />
         </Section>
 
+        {el.type === 'qrcode' && (
+          <Section title="QR Code Data">
+            <div>
+              <Label className="text-xs text-muted-foreground">Type</Label>
+              <Select value={el.qrType || 'text'} onValueChange={v => update({ qrType: v as any })}>
+                <SelectTrigger className="mt-1 h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="text" className="text-xs">Text</SelectItem>
+                  <SelectItem value="email" className="text-xs">Email</SelectItem>
+                  <SelectItem value="url" className="text-xs">URL</SelectItem>
+                  <SelectItem value="phone" className="text-xs">Phone</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {(!el.qrType || el.qrType === 'text') && (
+              <div className="mt-2">
+                <Label className="text-xs text-muted-foreground">Text Data</Label>
+                <Input value={el.text || ''} onChange={e => update({ text: e.target.value })} className="mt-1 text-sm" />
+              </div>
+            )}
+
+            {el.qrType === 'email' && (
+              <>
+                <div className="mt-2">
+                  <Label className="text-xs text-muted-foreground">Email</Label>
+                  <Input value={el.qrEmail || ''} onChange={e => update({ qrEmail: e.target.value })} className="mt-1 text-sm" placeholder="example@gmail.com" />
+                </div>
+                <div className="mt-2">
+                  <Label className="text-xs text-muted-foreground">Subject</Label>
+                  <Input value={el.qrSubject || ''} onChange={e => update({ qrSubject: e.target.value })} className="mt-1 text-sm" />
+                </div>
+                <div className="mt-2">
+                  <Label className="text-xs text-muted-foreground">Message</Label>
+                  <Input value={el.qrMessage || ''} onChange={e => update({ qrMessage: e.target.value })} className="mt-1 text-sm" />
+                </div>
+              </>
+            )}
+
+            {el.qrType === 'url' && (
+              <div className="mt-2">
+                <Label className="text-xs text-muted-foreground">Website URL</Label>
+                <Input value={el.qrUrl || ''} onChange={e => update({ qrUrl: e.target.value })} className="mt-1 text-sm" placeholder="https://" />
+              </div>
+            )}
+
+            {el.qrType === 'phone' && (
+              <div className="mt-2">
+                <Label className="text-xs text-muted-foreground">Phone Number</Label>
+                <Input value={el.qrPhone || ''} onChange={e => update({ qrPhone: e.target.value })} className="mt-1 text-sm" placeholder="+1..." />
+              </div>
+            )}
+          </Section>
+        )}
+
+        {el.type === 'qrcode' && (
+          <Section title="QR Style">
+            <div>
+              <Label className="text-xs text-muted-foreground">Style</Label>
+              <Select value={el.qrStyle || 'square'} onValueChange={v => update({ qrStyle: v as any })}>
+                <SelectTrigger className="mt-1 h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="square" className="text-xs">Square</SelectItem>
+                  <SelectItem value="rounded" className="text-xs">Rounded</SelectItem>
+                  <SelectItem value="dots" className="text-xs">Dots</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-3 mt-3">
+              <div>
+                <Label className="text-xs text-muted-foreground">QR Color</Label>
+                <input type="color" value={getSafeColor(el.fill)} onChange={e => update({ fill: e.target.value })} className="w-8 h-8 rounded border border-border cursor-pointer mt-1" />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Background</Label>
+                <input type="color" value={getSafeColor(el.qrBgColor || '#ffffff')} onChange={e => update({ qrBgColor: e.target.value })} className="w-8 h-8 rounded border border-border cursor-pointer mt-1" />
+              </div>
+            </div>
+          </Section>
+        )}
+
         {(el.type === 'text' || el.type === 'barcode') && (
           <Section title="Text Content">
             <div>

@@ -26,6 +26,14 @@ export interface CanvasElement {
   locked?: boolean;
   cornerRadius?: number;
   showText?: boolean;
+  qrType?: 'text' | 'email' | 'url' | 'phone';
+  qrEmail?: string;
+  qrSubject?: string;
+  qrMessage?: string;
+  qrUrl?: string;
+  qrPhone?: string;
+  qrStyle?: 'square' | 'rounded' | 'dots';
+  qrBgColor?: string;
 }
 
 export interface EditorState {
@@ -68,7 +76,7 @@ export const createDefaultElement = (type: ElementType, x = 100, y = 100): Canva
     case 'barcode':
       return { ...base, width: 180, height: 60, text: '{{serial}}', barcodeFormat: 'CODE128', fill: '#000000' };
     case 'qrcode':
-      return { ...base, width: 80, height: 80, text: '{{serial}}', fill: '#000000' };
+      return { ...base, width: 80, height: 80, text: '{{serial}}', fill: '#000000', qrType: 'text', qrStyle: 'square', qrBgColor: '#ffffff' };
     case 'image':
       return { ...base, width: 150, height: 150, fill: 'transparent', src: '' };
     default:

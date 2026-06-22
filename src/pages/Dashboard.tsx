@@ -103,6 +103,10 @@ const Dashboard = () => {
       navigate('/label-generator');
       return;
     }
+    if (cat.id === 'letterpad-maker') {
+      navigate('/letterpad-maker');
+      return;
+    }
     if (cat.id === 'custom') {
       setSelectedCategory(cat);
       return;
@@ -248,6 +252,8 @@ const Dashboard = () => {
                       navigate('/bg-remover');
                     } else if (cat.id === 'label') {
                       navigate('/label-generator');
+                    } else if (cat.id === 'letterpad-maker') {
+                      navigate('/letterpad-maker');
                     } else {
                       handleCategorySelect(cat);
                       setCreateDialogOpen(true);

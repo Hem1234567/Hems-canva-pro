@@ -81,6 +81,17 @@ export const designCategories: DesignCategory[] = [
     ],
   },
   {
+    id: 'letterpad-maker',
+    label: 'Letterpad Maker',
+    description: 'Design custom letterpads',
+    iconName: 'PenTool',
+    defaultWidth: 800,
+    defaultHeight: 1123,
+    presets: [
+      { label: 'A4 Letterpad', width: 800, height: 1123 }
+    ],
+  },
+  {
     id: 'barcode-generator',
     label: 'Barcode Generator',
     description: 'Create sequences of barcodes',
